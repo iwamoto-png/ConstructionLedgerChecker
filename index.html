@@ -287,11 +287,17 @@ body{background:var(--bg)}
 .fitem.cur{border-color:var(--accent)}
 .backup{border-top:2px solid var(--line)}
 /* 「施工体系図を入れる」とフォルダの札を同じ形・同じ幅にそろえる */
-.newfolder{border:2px dashed var(--accent);border-left:8px solid var(--accent);border-radius:8px;padding:10px 12px;gap:2px;background:var(--surface)}
+.newfolder{position:relative;border:2px dashed var(--accent);border-left-style:solid;border-radius:8px;padding:10px 12px 10px 20px;gap:2px;background:var(--surface);overflow:hidden}
 .newfolder strong{font-size:1.08rem}
 .newfolder .small{font-size:.9rem}
-.fitem{border-width:2px;border-left-width:8px;border-radius:8px}
-.fitem .fbtn{padding:10px 12px}
+.fitem{position:relative;border-width:2px;border-left-width:2px;border-radius:8px}
+.fitem .fbtn{padding:10px 12px 10px 20px}
+.fitem .factions{padding-left:20px}
+/* 左の太い棒は枠線ではなく、上から下まで同じ高さの帯として描く（2つの枠でそろう） */
+.newfolder::before,.fitem::before{content:"";position:absolute;left:0;top:0;bottom:0;width:8px;background:var(--bar)}
+.newfolder{--bar:var(--accent)}
+.fitem{--bar:var(--line)}
+.fitem.cur{--bar:var(--accent)}
 .footnote{margin:6px 0 0;padding:14px 18px;border-radius:10px;background:var(--surface);border-left:6px solid var(--warn);font-size:.98rem;box-shadow:var(--shadow)}
 @media (max-width:900px){
   .layout{grid-template-columns:220px minmax(0,1fr);gap:14px}
