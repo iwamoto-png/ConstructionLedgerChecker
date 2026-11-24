@@ -97,6 +97,7 @@ header.top p{margin:4px 0 0;max-width:64ch}
 .dlg input{width:100%;min-height:52px;border:2px solid var(--accent);background:var(--surface);border-radius:8px;padding:8px 12px;font-size:1.15rem;font-weight:700}
 .dlg p{margin:0}
 .dlg p:empty{display:none}
+.tiersel{display:flex;flex-direction:column;gap:2px}
 .titlerow{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
 .titlerow h2{overflow-wrap:anywhere;min-width:0}
 .rename{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
@@ -418,8 +419,7 @@ const TIERS = {
 };
 /* 施工体系図（1枚目）は照合の基準。業者ごとの書類を、体系図のその業者の記載と照らし合わせる */
 const MATCH_RULES = [
-  {id:"tm_name", g:"施工体系図との照合", t:"会社名が体系図に載っている"},
-  {id:"tm_tier", g:"施工体系図との照合", t:"次数（1次・2次・3次）が体系図と一致", d:"注文書の注文者（契約の相手）から判断"},
+  {id:"tm_name", g:"施工体系図との照合", t:"会社名が体系図に載っている", d:"次数は体系図から自動で設定"},
 ];
 function rulesFor(tier){
   const first = tier === "s1";
@@ -893,8 +893,7 @@ function judgePrompt(obj, slot, folder, rules, orderInfo){
 
 ## 施工体系図での記載（照合の基準）
 工事名:${info.koujimei || "不明"}／元請:${info.motouke || "不明"}この業者:${slotLine}
-施工体系図との照合は次数だけを判定する（会社名はシステム側で確認済み。工期は体系図と照合しない）：
-- tm_tier：注文書・請書の注文者が元請なら1次、1次業者なら2次、2次業者なら3次。上の体系図の次数と違えば ng。注文者が読み取れなければ warn
+この業者の次数（1次・2次・3次）は体系図から決めてあるので、それを前提に判定する（体系図との照合項目はシステム側で確認済み）。
 
 ## 公式ルール（福岡市）
 ${OFFICIAL}
@@ -923,6 +922,7 @@ function checkOrder(pages){
 }
 function manualResults(tier){ const r = {}; for (const x of rulesFor(tier)) r[x.id] = {status:"todo", note:"", pages:[]}; return r; }
 function folderById(fid){ return folders.find(f => f.id === fid); }
+function vendorTier(d, slot){ return (d && d.tierManual) || (slot ? slot.tier : (d && d.tier) || "s1"); }
 function slotOf(folder, key){ return folder && key ? (folder.slots || []).find(s => s.key === key) : null; }
 function matchSlotByName(folder, text){
   if (!folder) return null;
@@ -974,9 +974,10 @@ async function processVendor(w, mode){
       if (hit){ obj.slot = hit.key; obj.tier = hit.tier; }
     }
     w.phase = "judge"; render();
+    const slot = slotOf(folder, obj.slot);
+    obj.tier = vendorTier(obj, slot);
     const rules = rulesFor(obj.tier);
     const ord = checkOrder(obj.pages);
-    const slot = slotOf(folder, obj.slot);
     const res = await askJson(judgePrompt(obj, slot, folder, rules, ord.status === "ok" ? "問題なし" : ord.note));
     const items = res && Array.isArray(res.items) ? res.items : [];
     obj.results = {};
@@ -1296,21 +1297,19 @@ function renderCard(v, f){
   const d = v.doc, w = v.w;
   const busy = !!w && w.phase !== "error";
   const slot = slotOf(f, d.slot);
-  const tier = slot ? slot.tier : d.tier;
+  const tier = vendorTier(d, slot);
   const t = slot ? TIERS[tier] : {short:"未割当", cls:"tx"};
   const rules = rulesFor(tier);
   const c = counts(d.results);
 
-  const assign = !busy ? h("select",{"aria-label":"体系図の業者に割り当て", onchange:async(e)=>{
-      const key = e.target.value; const sl = slotOf(f, key);
-      const patch = {slot:key, tier: sl ? sl.tier : d.tier};
+  /* 次数は体系図から自動で入る。違っていたときだけ手で直せる */
+  const tierSel = !busy ? h("label",{class:"tiersel"},
+    h("span",{class:"small muted", text: d.tierManual ? "次数（手で変更）" : slot ? "次数（体系図から自動）" : "次数（体系図になし）"}),
+    h("select",{"aria-label":"次数", onchange:async(e)=>{
+      const val = e.target.value;
+      const patch = {tierManual: slot && val === slot.tier ? "" : val};
       try { await store.updVendor(f.id, v.id, patch); rejudge(v, f, patch); } catch(err){ notes.db = dbErrText(err); render(); }
-    }},
-    h("option",{value:"", text:"（体系図の業者に割り当て…）"}),
-    (f.slots || []).map(s => { const o = h("option",{value:s.key, text:`${TIERS[s.tier].short}　${s.name}`}); if (s.key === d.slot) o.selected = true; return o; })) : null;
-  const tierSel = !busy && !slot ? h("select",{"aria-label":"区分", onchange:async(e)=>{
-      try { await store.updVendor(f.id, v.id, {tier:e.target.value}); rejudge(v, f, {tier:e.target.value}); } catch(err){ notes.db = dbErrText(err); render(); }
-    }}, Object.entries(TIERS).map(([k,x]) => { const o = h("option",{value:k, text:x.label}); if (k === d.tier) o.selected = true; return o; })) : null;
+    }}, Object.entries(TIERS).map(([k,x]) => { const o = h("option",{value:k, text:x.label}); if (k === tier) o.selected = true; return o; }))) : null;
 
   const head = h("div",{class:"card-head"},
     h("div",{class:"name"},
@@ -1319,7 +1318,7 @@ function renderCard(v, f){
     h("div",{class:"acts"},
       h("span",{class:"small", style:"font-family:var(--f-mono)"},
         h("span",{style:"color:var(--ng)", text:`×${c.ng}`}), "　", h("span",{style:"color:var(--warn)", text:`△${c.warn + c.todo}`}), "　", h("span",{style:"color:var(--ok)", text:`○${c.ok}`})),
-      assign, tierSel,
+      tierSel,
       !busy && !work[v.id] ? h("button",{class:"btn small", type:"button", onclick:()=>openRename({
         heading:"業者名を変更", value:d.name || "", placeholder:(slot && slot.name) || d.fileName,
         hint:"この業者の詳細に表示する名前です。空にして保存すると、体系図の会社名（またはファイル名）で表示します。",
