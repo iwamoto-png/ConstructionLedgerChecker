@@ -84,12 +84,14 @@ header.top p{margin:4px 0 0;max-width:64ch}
 .phead .meta{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 12px;font-size:.88rem;margin:6px 0 0}
 .phead .meta dt{color:var(--muted)} .phead .meta dd{margin:0;overflow-wrap:anywhere}
 .acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.slotinfo{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 12px;margin:0;padding:10px 16px;border-bottom:1px solid var(--line);font-size:.86rem;background:color-mix(in srgb,var(--accent) 5%,var(--surface))}
+.slotinfo dt{color:var(--muted);white-space:nowrap} .slotinfo dd{margin:0;overflow-wrap:anywhere}
 .titlerow{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
 .titlerow h2{overflow-wrap:anywhere;min-width:0}
 .rename{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .rename input{flex:1;min-width:0;max-width:420px;border:1px solid var(--accent);background:var(--surface);border-radius:6px;padding:5px 10px;font-size:1.05rem;font-weight:700}
 .taikei-body{display:grid;grid-template-columns:minmax(0,1fr) auto}
-.thumbs{display:flex;gap:8px;padding:12px 16px;border-left:1px solid var(--line);background:var(--sunk);flex-wrap:wrap;align-content:flex-start;max-width:280px}
+.thumbs{display:flex;gap:8px;padding:12px 16px;background:var(--sunk);flex-wrap:wrap;align-content:flex-start;border-radius:0 0 10px 10px}
 .thumbs button{border:1px solid var(--line);padding:3px;background:var(--surface);border-radius:4px}
 .thumbs img{display:block;width:110px;height:auto;background:#fff}
 
@@ -172,8 +174,73 @@ select{border:1px solid var(--line);background:var(--surface);border-radius:6px;
 .viewer .cap{color:#f2f2f2;max-width:72ch;font-size:.9rem;white-space:pre-wrap;overflow-y:auto;max-height:18vh}
 .viewer .btn{background:#fff;color:#111}
 
+/* ===== 見やすさ優先（年配の方でも読みやすく、押しやすく） ===== */
+:root{--muted:#424b51;--line:#b9c0bb}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--muted:#c3ccd1;--line:#46525a}}
+body{font-size:18px;line-height:1.75}
+h1{font-size:1.9rem}
+h2{font-size:1.3rem}
+.small{font-size:.95rem}
+header.top p{font-size:1.02rem}
+:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.legend{font-size:1rem;gap:8px 18px}
+.btn{min-height:46px;padding:8px 18px;border-width:2px;border-radius:8px;font-weight:700}
+.btn.small{min-height:40px;padding:5px 14px;font-size:.98rem}
+.banner{font-size:1rem;padding:14px 16px;border-width:2px}
+.settings input[type=password],.settings input[type=text]{min-height:46px;font-size:1rem}
+.layout{grid-template-columns:300px minmax(0,1fr)}
+.side h2{font-size:1rem}
+.newfolder{padding:16px;border-width:3px}
+.newfolder strong{font-size:1.15rem}
+.fbtn{padding:12px 12px 12px 0;border-width:2px}
+.fbtn .spine{margin:-12px 0;width:8px}
+.fbtn .ft{font-size:1.05rem}
+.fbtn .fs{font-size:.92rem}
+.fno{font-size:.88rem}
+.fno.big{font-size:1rem}
+.latest{font-size:.82rem}
+.phead{padding:18px 20px}
+.phead .meta{font-size:1rem;gap:4px 14px}
+.drop{padding:22px 22px;border-width:3px}
+.drop strong{font-size:1.15rem}
+th{font-size:.92rem;font-weight:700;color:var(--ink);background:var(--sunk)}
+th,td{padding:12px 12px}
+td.num{font-size:1.15rem;width:56px}
+.vname{font-size:1.05rem}
+.cell-sub{font-size:.95rem}
+.tag{font-size:.92rem;padding:3px 10px}
+.verdict{font-size:.95rem;padding:4px 14px}
+.copied,.newbadge{font-size:.85rem}
+.card .index{height:32px;top:-36px;padding:5px 18px 0;font-size:1rem}
+.card{margin-top:38px}
+.card-head{padding:18px 20px}
+select{min-height:44px;font-size:1rem;border-width:2px}
+.prog{font-size:1rem;padding:14px 20px}
+.bar{height:10px;border-radius:5px}
+.err{font-size:1.02rem;padding:14px 20px;font-weight:700}
+.aisum{font-size:1.02rem;padding:14px 20px}
+.slotinfo{font-size:1rem;padding:14px 20px}
+.group{font-size:1rem;padding:14px 20px 6px;color:var(--ink);border-bottom:2px solid var(--line)}
+.row{grid-template-columns:74px minmax(0,1fr);gap:14px;padding:12px 20px}
+.row .t{font-size:1.05rem}
+.row .d{font-size:.95rem}
+.row .note{font-size:1rem}
+.st{width:70px;height:56px;border-width:2px;border-radius:8px;font-size:1.4rem;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;line-height:1.1}
+.st .sl{font-size:.72rem;font-weight:700;letter-spacing:0}
+.st.mini{width:auto;height:auto;padding:2px 10px;font-size:1.05rem;flex-direction:row;gap:6px}
+.pchip{font-size:.9rem;padding:2px 8px;border-width:2px}
+.manual{font-size:.85rem}
+.pages h3{font-size:.95rem;color:var(--ink);font-weight:700}
+.plist{grid-template-columns:repeat(auto-fill,minmax(100px,1fr))}
+.pg .pn{font-size:.85rem}
+.pg .pt{font-size:.88rem}
+.card-body{grid-template-columns:minmax(0,1fr) 300px}
+.thumbs img{width:150px}
+.empty{font-size:1.05rem;padding:30px 26px}
+.empty ol{gap:10px}
+.viewer .cap{font-size:1.05rem}
 @media (max-width:900px){
-  .layout{grid-template-columns:190px minmax(0,1fr);gap:14px}
+  .layout{grid-template-columns:220px minmax(0,1fr);gap:14px}
   .newfolder .small{display:none}
   .card-body,.taikei-body{grid-template-columns:minmax(0,1fr)}
   .pages,.thumbs{border-left:0;border-top:1px solid var(--line);max-width:none}
@@ -234,7 +301,7 @@ select{border:1px solid var(--line);background:var(--surface);border-radius:6px;
     <main class="main" id="main"></main>
   </div>
 
-  <p class="muted small">判定はAIの読み取りに基づく下書きです。×・△は必ず原本で確認してください。判定記号をクリックすると手動で切り替えられます（○→×→△→－）。フォルダ・判定結果・ページ画像はこのブラウザの中に保存され、閉じても残ります。別のパソコンへ移すときや念のための控えには「バックアップを保存」を使ってください。</p>
+  <p class="muted small">判定はAIが読み取った結果です。×（不足）と△（確認）は、必ず原本で確かめてください。判定のボタンを押すと、○→×→△→－ の順に手で切り替えられます。フォルダ・判定結果・ページ画像はこのブラウザの中に保存され、閉じても残ります。別のパソコンへ移すときや念のための控えには「バックアップを保存」を使ってください。</p>
 </div>
 
 <input type="file" id="taikeiIn" accept="application/pdf,.pdf" hidden>
@@ -262,15 +329,19 @@ const TIERS = {
   s2:{label:"2次下請（再下請負通知書）", short:"2次", cls:"t2"},
   s3:{label:"3次以降（再下請負通知書）", short:"3次〜", cls:"t3"},
 };
-const TAIKEI_CHECKS = [
-  {id:"t_date", t:"体系図の日付（作成日・提出日）の記載"},
-  {id:"t_kouki", t:"全体と各業者の工期の記載"},
-  {id:"t_work", t:"全業者の担当工事と主任技術者の記載"},
+/* 施工体系図（1枚目）は照合の基準。業者ごとの書類を、体系図のその業者の記載と照らし合わせる */
+const MATCH_RULES = [
+  {id:"tm_name", g:"施工体系図との照合", t:"社名が体系図に載っている"},
+  {id:"tm_tier", g:"施工体系図との照合", t:"次数（1次・2次・3次）が体系図と一致", d:"注文者（契約の相手）から判断"},
+  {id:"tm_parent", g:"施工体系図との照合", t:"契約の相手（注文者）が体系図と一致"},
+  {id:"tm_work", g:"施工体系図との照合", t:"工事内容が体系図と一致"},
+  {id:"tm_kouki", g:"施工体系図との照合", t:"工期が体系図と一致"},
+  {id:"tm_shunin", g:"施工体系図との照合", t:"主任技術者が体系図と一致", d:"許可がない業者は対象外"},
 ];
 function rulesFor(tier){
   const first = tier === "s1";
   const L = [
-    {id:"t_match", g:"体系図との照合", t:"体系図の記載（会社名・次数・契約相手・工期）と一致"},
+    ...MATCH_RULES,
     {id:"s_order", g:"書類", t:"⑦ 注文書（契約書でも可）"},
     {id:"s_ukesho", g:"書類", t:"⑧ 注文請書（契約書でも可）"},
     {id:"s_mitsumori", g:"書類", t:"⑨ 見積書（相手が発行したもの）", d:"注文書等に数量内訳があれば不要"},
@@ -326,7 +397,7 @@ const INHOUSE = `- 1次（JVと契約）は施工体制台帳（下請負人に�
 - 主任技術者：資格免許、または10年以上の勤務証明があるか。保険証の写しで会社名を見て社員か確認（マイナ保険証で保険証がない場合は従業員情報ページの印刷でOK）
 - 作業員名簿：作成日・提出日・受入年月日の記載／安・現・主等の表示があり、台帳・再下請負通知書の記載と一致／雇用保険番号の記載（例 123-4）／建退共の有無の記載、有なら建退共報告書に記載があるか`;
 
-const STATUS = {ok:{sym:"○",label:"確認済み"}, ng:{sym:"×",label:"不足・不備"}, warn:{sym:"△",label:"目で確認"}, na:{sym:"－",label:"対象外"}, todo:{sym:"?",label:"未判定"}};
+const STATUS = {ok:{sym:"○",label:"確認済み",short:"OK"}, ng:{sym:"×",label:"不足・不備",short:"不足"}, warn:{sym:"△",label:"目で確認",short:"確認"}, na:{sym:"－",label:"対象外",short:"対象外"}, todo:{sym:"?",label:"未判定",short:"未判定"}};
 const CYCLE = ["ok","ng","warn","na"];
 
 /* ================= 状態 ================= */
@@ -639,11 +710,11 @@ function taikeiPrompt(desc){
   return `添付画像は、福岡市の公共建築工事の「施工体系図（工事作業所災害防止協議会兼施工体系図）」です。${desc}
 読み取って、次の形のJSONだけを返してください：
 {"koujimei":"工事名","motouke":"元請（受注者）名。JVならJV名","date":"体系図の作成日・提出日（記載どおり。無ければ空文字）","kouki":"全体の工期（記載どおり）",
-"vendors":[{"name":"会社名","tier":1,"parent":"契約の相手（1次なら元請名、2次なら注文者の1次業者名）","work":"担当工事（工種）","kouki":"その業者の工期","shunin":"主任技術者名"}],
-"checks":[{"id":"t_date","status":"ok","note":"根拠（40字以内）"},{"id":"t_kouki","status":"ok","note":""},{"id":"t_work","status":"ok","note":""}]}
+"vendors":[{"name":"会社名","tier":1,"parent":"契約の相手（1次なら元請名、2次なら注文者の1次業者名）","work":"担当工事（工種）","kouki":"その業者の工期","shunin":"主任技術者名（資格）","kyoka":"許可業種・許可番号（記載どおり）"}]}
+- この体系図は、後で各業者の提出書類と照らし合わせる基準に使う。書かれていることをそのまま正確に写す
 - vendors には体系図に載っている下請業者をすべて、上位から順に入れる。元請は入れない。同じ会社が複数の工事で載っている場合は1つにまとめ、workに並べる
-- tier は 1次=1、2次=2、3次以降=3
-- checks の status は ok／ng（記載漏れ）／warn（判読できず要確認）。t_date=体系図の日付が記載されているか、t_kouki=全体と各業者の工期が記載されているか、t_work=全業者に担当工事と主任技術者が記載されているか
+- tier は 1次=1、2次=2、3次以降=3（線のつながり・注文者から判断）
+- 書かれていない項目は空文字にする
 - 読めない文字は推測せず「判読不可」と書く`;
 }
 
@@ -674,15 +745,8 @@ async function createFolder(file){
         key:"k"+(i+1), name:String(v.name).slice(0,60),
         tier: Number(v.tier) >= 3 ? "s3" : Number(v.tier) === 2 ? "s2" : "s1",
         parent:String(v.parent || "").slice(0,60), work:String(v.work || "").slice(0,80),
-        kouki:String(v.kouki || "").slice(0,60), shunin:String(v.shunin || "").slice(0,30),
+        kouki:String(v.kouki || "").slice(0,60), shunin:String(v.shunin || "").slice(0,40), kyoka:String(v.kyoka || "").slice(0,60),
       }));
-      const ch = Array.isArray(res && res.checks) ? res.checks : [];
-      for (const c of TAIKEI_CHECKS){
-        const it = ch.find(x => x && x.id === c.id);
-        data.checks[c.id] = {status: it && ["ok","ng","warn"].includes(it.status) ? it.status : "warn", note: it ? String(it.note || "").slice(0,100) : ""};
-      }
-    } else {
-      for (const c of TAIKEI_CHECKS) data.checks[c.id] = {status:"todo", note:""};
     }
     taikeiWork.text = "体系図の画像を保存しています"; render();
     const tp = pages.map(p => ({n:p.n}));
@@ -727,9 +791,9 @@ text には、そのページで読み取れたことだけを日本語で簡潔
 }
 function judgePrompt(obj, slot, folder, rules, orderInfo){
   const pageLines = obj.pages.map(p => `p${p.n}［${p.type || "不明"}］${p.company ? "会社:" + p.company + "／" : ""}${p.unreadable ? "（判読困難）" : ""}${(p.text || "").replace(/\s+/g," ")}`).join("\n");
-  const ruleLines = rules.filter(r => r.id !== "order").map(r => `${r.id}: ${r.t}${r.d ? "（" + r.d + "）" : ""}`).join("\n");
+  const ruleLines = rules.filter(r => r.id !== "order" && r.id !== "tm_name").map(r => `${r.id}: ${r.t}${r.d ? "（" + r.d + "）" : ""}`).join("\n");
   const slotLine = slot
-    ? `会社名:${slot.name}／次数:${TIERS[slot.tier].short}／契約相手:${slot.parent || "記載なし"}／担当工事:${slot.work || "記載なし"}／工期:${slot.kouki || "記載なし"}／主任技術者:${slot.shunin || "記載なし"}`
+    ? `会社名:${slot.name}／次数:${TIERS[slot.tier].short}／契約相手:${slot.parent || "記載なし"}／担当工事:${slot.work || "記載なし"}／工期:${slot.kouki || "記載なし"}／主任技術者:${slot.shunin || "記載なし"}／許可:${slot.kyoka || "記載なし"}`
     : "（この業者は体系図に載っていません）";
   const info = folder && folder.info ? folder.info : {};
   return `あなたは福岡市の公共建築工事の施工体制台帳を点検する担当者です。
@@ -746,7 +810,13 @@ function judgePrompt(obj, slot, folder, rules, orderInfo){
 ## 施工体系図での記載（照合の基準）
 工事名:${info.koujimei || "不明"}／元請:${info.motouke || "不明"}／全体工期:${info.kouki || "不明"}
 この業者:${slotLine}
-t_match は、提出書類の会社名・次数（注文者が誰か）・工期が上の体系図の記載と合っているかで判定。業者の工期が全体工期の範囲外なら ng。
+施工体系図との照合（tm_ で始まる項目）は、提出書類（注文書・請書・台帳／再下請負通知書・名簿など）の記載を上の体系図の記載と比べて判定する：
+- tm_tier：注文者が元請なら1次、1次業者なら2次、2次業者なら3次。体系図の次数と違えば ng
+- tm_parent：注文書・請書の注文者名が体系図の契約相手と違えば ng
+- tm_work：工事内容（工種）が体系図と食い違えば ng
+- tm_kouki：工期が体系図と違えば ng。業者の工期が全体工期の範囲外でも ng
+- tm_shunin：主任技術者の氏名が体系図と違えば ng。建設業許可のない業者は na
+- 体系図側が「記載なし」の項目は、書類側が書かれていても warn（体系図の確認が必要）にする
 
 ## 公式ルール（福岡市）
 ${OFFICIAL}
@@ -838,7 +908,11 @@ async function processVendor(w, mode){
       const st = it && STATUS[it.status] && it.status !== "todo" ? it.status : "warn";
       obj.results[r.id] = {status:st, note: it ? String(it.note || "").slice(0,120) : "AIの判定が返らなかったため要確認", pages: it && Array.isArray(it.pages) ? it.pages.map(Number).filter(n => n > 0 && n <= obj.pages.length).slice(0,8) : []};
     }
-    if (!slot) obj.results.t_match = {status:"ng", note:"体系図に載っていない業者です", pages:[]};
+    if (slot) obj.results.tm_name = {status:"ok", note:`体系図の「${slot.name}」（${TIERS[slot.tier].short}）`, pages:[]};
+    else {
+      obj.results.tm_name = {status:"ng", note:"体系図に載っていない業者です", pages:[]};
+      for (const r of MATCH_RULES) if (r.id !== "tm_name") obj.results[r.id] = {status:"warn", note:"体系図に載っていないため照合できません", pages:[]};
+    }
     if (res && res.company) obj.name = String(res.company).slice(0,60);
     obj.summary = res && res.summary ? String(res.summary).slice(0,200) : "";
     await saveVendor(w);
@@ -889,10 +963,25 @@ function addVendorFiles(list, forcedSlot){
 }
 
 /* ---------- 集計 ---------- */
-function counts(results){
+function counts(...lists){
   const c = {ok:0, ng:0, warn:0, na:0, todo:0};
-  for (const r of Object.values(results || {})) c[r.status] = (c[r.status] || 0) + 1;
+  for (const results of lists) for (const r of Object.values(results || {})) c[r.status] = (c[r.status] || 0) + 1;
   return c;
+}
+/* 体系図に書かれているこの業者の情報（照合の基準） */
+function slotInfo(s){
+  return h("dl",{class:"slotinfo"},
+    h("dt",{text:"体系図の記載"}), h("dd",{},
+      `次数：${TIERS[s.tier].short}　契約相手：${s.parent || "—"}　工事：${s.work || "—"}　工期：${s.kouki || "—"}　主任技術者：${s.shunin || "—"}　許可：${s.kyoka || "—"}`));
+}
+function renderSlotCard(f, s){
+  const t = TIERS[s.tier];
+  return h("article",{class:`card ${t.cls}`, id:"detail"}, h("div",{class:"index", text:t.short}),
+    h("div",{class:"card-head"},
+      h("div",{class:"name"}, h("h2",{text:s.name})),
+      h("div",{class:"acts"}, h("button",{class:"btn primary small", type:"button", onclick:()=>{ pendingSlot = s.key; slotIn.click(); }, text:"PDFを入れる"}))),
+    slotInfo(s),
+    h("div",{class:"err", text:"この業者の書類（PDF）はまだ提出されていません。PDFを入れると、上の体系図の記載と照らし合わせてチェックします。"}));
 }
 function currentVendors(){
   const m = {};
@@ -905,8 +994,7 @@ function refreshStats(fid){
   const f = folderById(fid); if (!f) return;
   const vs = currentVendors().filter(v => !v.w);
   let ng = 0, warn = 0;
-  vs.forEach(v => { const c = counts(v.doc.results); ng += c.ng; warn += c.warn + c.todo; });
-  const missing = (f.slots || []).filter(s => !vs.some(v => v.doc.slot === s.key)).length;
+  vs.forEach(v => { const c = counts(v.doc.results); ng += c.ng; warn += c.warn + c.todo; });  const missing = (f.slots || []).filter(s => !vs.some(v => v.doc.slot === s.key)).length;
   const stats = {total:(f.slots || []).length, missing, ng, warn, extra: vs.filter(v => !v.doc.slot).length};
   const old = f.stats || {};
   if (["total","missing","ng","warn","extra"].some(k => old[k] !== stats[k])) store.updFolder(fid, {stats}).catch(() => {});
@@ -1018,14 +1106,6 @@ function renderMain(){
     h("span",{class:"fno big", text:`${idx + 1}フォルダ目 ／ 全${folders.length}`}),
     h("button",{class:"btn small", type:"button", disabled: !nextF || null, onclick:()=>nextF && selectFolder(nextF.id), text:"次のフォルダ →"})));
 
-  const tchecks = h("div",{class:"checks"}, h("div",{class:"group", text:"体系図の記載"}),
-    TAIKEI_CHECKS.map(c => {
-      const r = (f.checks || {})[c.id] || {status:"todo", note:""};
-      return h("div",{class:`row s-${r.status}`},
-        h("button",{class:`st ${r.status}`, type:"button", title:`${STATUS[r.status].label}（クリックで切替）`, "aria-label":`${c.t}：${STATUS[r.status].label}`,
-          onclick:()=>{ const i = CYCLE.indexOf(r.status); store.updFolder(f.id, {checks:{[c.id]:{status:CYCLE[(i+1)%CYCLE.length], note:r.note || "", manual:true}}}).catch(e => { notes.db = dbErrText(e); render(); }); }}, STATUS[r.status].sym),
-        h("div",{style:"min-width:0"}, h("div",{class:"t"}, c.t, r.manual ? h("span",{class:"manual", text:"手動"}) : null), r.note ? h("div",{class:"note", text:r.note}) : null));
-    }));
   const tnums = [...new Set([...Object.keys(imgCache[f.id] || {}), ...Object.keys(f.pageImgs || {})])].map(Number).sort((a,b) => a - b);
   const thumbs = tnums.length ? h("div",{class:"thumbs"}, tnums.map(n => {
     const img = (f.pageImgs || {})[n]; const src = pageSrc(f.id, n, img);
@@ -1058,9 +1138,10 @@ function renderMain(){
           h("dt",{text:"工事名"}), h("dd",{text:info.koujimei || "—"}),
           h("dt",{text:"元請"}), h("dd",{text:info.motouke || "—"}),
           h("dt",{text:"工期"}), h("dd",{text:info.kouki || "—"}),
+          h("dt",{text:"体系図の日付"}), h("dd",{text:info.date || "—"}),
           h("dt",{text:"ファイル"}), h("dd",{text:`${f.fileName}（取込 ${fmtDate(f.createdAt)}）`}))),
       h("div",{class:"acts"}, carryBtn, delBtn)),
-    h("div",{class:"taikei-body"}, tchecks, thumbs)));
+    thumbs));
 
   const drop = h("div",{class:"drop", role:"button", tabindex:"0",
     onclick:()=>{ pendingSlot = null; vendorIn.click(); },
@@ -1083,10 +1164,11 @@ function renderMain(){
     const v = pickFor(s.key);
     const t = TIERS[s.tier];
     const missing = !v;
-    const c = v ? counts(v.doc.results) : {ng:0,warn:0,ok:0,todo:0};
-    tb.append(h("tr",{class:`vrow${missing ? " missing" : ""}`, "aria-selected": String(!!v && v.id === selectedVid), tabindex:"0",
-        onclick:(e)=>{ if (e.target.closest("button")) return; if (v){ selectedVid = v.id; render(); document.getElementById("detail")?.scrollIntoView({behavior:"smooth", block:"start"}); } },
-        onkeydown:(e)=>{ if (e.key === "Enter" && v){ selectedVid = v.id; render(); } }},
+    const c = counts(v ? v.doc.results : null);
+    const rowId = v ? v.id : "slot:" + s.key;
+    tb.append(h("tr",{class:`vrow${missing ? " missing" : ""}`, "aria-selected": String(rowId === selectedVid), tabindex:"0",
+        onclick:(e)=>{ if (e.target.closest("button")) return; selectedVid = rowId; render(); document.getElementById("detail")?.scrollIntoView({behavior:"smooth", block:"start"}); },
+        onkeydown:(e)=>{ if (e.key === "Enter"){ selectedVid = rowId; render(); } }},
       h("td",{}, h("span",{class:`tag ${t.cls}`, text:t.short})),
       h("td",{class:"vname"}, h("span",{class:"ind", text: s.tier === "s1" ? "" : s.tier === "s2" ? "└ " : "　└ "}), s.name,
         v && v.doc.copiedFrom ? h("span",{class:"copied", text:"引継ぎ"}) : null,
@@ -1116,12 +1198,15 @@ function renderMain(){
     h("div",{class:"phead"},
       h("div",{}, h("h2",{text:"業者一覧"}), h("div",{class:"small muted", text:`体系図の業者 ${(f.slots||[]).length}社 ／ 未提出 ${st.missing ?? "—"}社`})),
       h("div",{class:"acts"},
-        h("button",{class:"btn small", type:"button", "aria-pressed":String(onlyIssues), onclick:()=>{ onlyIssues = !onlyIssues; render(); }, text: onlyIssues ? "すべての項目を表示" : "詳細は×と△だけ表示"}),
+        h("button",{class:"btn small", type:"button", "aria-pressed":String(onlyIssues), onclick:()=>{ onlyIssues = !onlyIssues; render(); }, text: onlyIssues ? "すべての項目を表示" : "問題のある項目だけ表示"}),
         h("button",{class:"btn small", type:"button", onclick:()=>saveCsv(f), text:"CSVで保存"}))),
     h("div",{class:"tablebox"}, h("table",{},
       h("thead",{}, h("tr",{}, ["区分","業者","担当工事","契約相手"].map(x => h("th",{text:x})), h("th",{style:"text-align:center",text:"×"}), h("th",{style:"text-align:center",text:"△"}), h("th",{style:"text-align:center",text:"○"}), h("th",{text:"判定"}), h("th",{text:""}))),
       tb))));
 
+  const selSlot = String(selectedVid || "").startsWith("slot:") ? slotOf(f, selectedVid.slice(5)) : null;
+  if (selSlot && pickFor(selSlot.key)) selectedVid = pickFor(selSlot.key).id;
+  if (selSlot && !pickFor(selSlot.key)){ main.append(renderSlotCard(f, selSlot)); return; }
   let sel = vs.find(v => v.id === selectedVid);
   if (!sel){
     sel = vs.filter(v => v.w).slice(-1)[0] || vs.find(v => counts(v.doc.results).ng) || null;
@@ -1176,6 +1261,7 @@ function renderCard(v, f){
     card.append(h("div",{class:"prog", role:"status"}, h("span",{text:label}), h("span",{class:"bar"}, h("i",{style:`width:${pct}%`}))));
   }
   if (w && w.error) card.append(h("div",{class:"err", role:"alert", text:w.error}));
+  if (slot) card.append(slotInfo(slot));
   if (d.summary && !busy) card.append(h("div",{class:"aisum"}, h("b",{text:"所見　"}), d.summary));
 
   const checks = h("div",{class:"checks"});
@@ -1189,7 +1275,7 @@ function renderCard(v, f){
         const i = CYCLE.indexOf(st);
         const patch = {results:{[r.id]:{status:CYCLE[(i+1)%CYCLE.length], note:res ? res.note || "" : "", pages:res ? res.pages || [] : [], manual:true}}};
         try { await store.updVendor(f.id, v.id, patch); render(); refreshStats(f.id); } catch(err){ notes.db = dbErrText(err); render(); }
-      }}, STATUS[st].sym);
+      }}, STATUS[st].sym, h("span",{class:"sl", text:STATUS[st].short}));
     const chips = res && res.pages && res.pages.length ? h("span",{class:"pchips"}, res.pages.map(n => h("button",{class:"pchip", type:"button", onclick:()=>pageView(v, n), text:"p"+n}))) : null;
     const hide = onlyIssues && !["ng","warn","todo"].includes(st);
     checks.append(h("div",{class:`row s-${st}${hide ? " hide" : ""}`}, btn,
@@ -1252,7 +1338,6 @@ function saveCsv(f){
   const q = s => `"${String(s ?? "").replace(/"/g,'""')}"`;
   const rows = [["体系図フォルダ","区分","業者名","担当工事","契約相手","ファイル名","項目","判定","メモ","ページ","手動"].map(q).join(",")];
   const vs = currentVendors().filter(v => !v.w);
-  for (const c of TAIKEI_CHECKS){ const r = (f.checks || {})[c.id] || {status:"todo"}; rows.push([f.title,"体系図","","","",f.fileName,c.t,STATUS[r.status].sym+" "+STATUS[r.status].label,r.note || "","",r.manual ? "手動" : ""].map(q).join(",")); }
   for (const s of (f.slots || [])){
     const v = vs.filter(x => x.doc.slot === s.key).sort((a,b) => (b.doc.updatedAt||0)-(a.doc.updatedAt||0))[0];
     if (!v){ rows.push([f.title, TIERS[s.tier].short, s.name, s.work, s.parent, "", "提出", "× 未提出", "", "", ""].map(q).join(",")); continue; }
