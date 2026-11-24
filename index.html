@@ -86,9 +86,13 @@ header.top p{margin:4px 0 0;max-width:64ch}
 .acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .slotinfo{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 12px;margin:0;padding:10px 16px;border-bottom:1px solid var(--line);font-size:.86rem;background:color-mix(in srgb,var(--accent) 5%,var(--surface))}
 .slotinfo dt{color:var(--muted);white-space:nowrap} .slotinfo dd{margin:0;overflow-wrap:anywhere}
-.fitem{position:relative}
-.fitem .fno{min-height:32px;padding-right:120px}
-.fitem .frename{position:absolute;top:8px;right:8px;min-height:32px;padding:1px 10px;font-size:.85rem}
+/* フォルダ一覧：1件を1枚の札にし、開いているフォルダだけ札の中に「名前を変更」を出す */
+.fitem{border:2px solid var(--line);border-left:8px solid var(--line);border-radius:8px;background:var(--surface);overflow:hidden}
+.fitem.cur{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 6%,var(--surface))}
+.fitem .fbtn{display:block;width:100%;border:0;border-radius:0;background:transparent;padding:10px 12px}
+.fitem .fbtn .spine{display:none}
+.fitem .factions{display:flex;padding:0 12px 10px}
+.fitem .frename{width:100%;min-height:38px;font-size:.92rem;background:var(--surface)}
 .dlg{background:var(--surface);color:var(--ink);border-radius:12px;padding:24px;width:min(520px,100%);display:flex;flex-direction:column;gap:12px;box-shadow:0 12px 40px rgba(0,0,0,.35)}
 .dlg input{width:100%;min-height:52px;border:2px solid var(--accent);background:var(--surface);border-radius:8px;padding:8px 12px;font-size:1.15rem;font-weight:700}
 .dlg p{margin:0}
@@ -1059,7 +1063,8 @@ function renderSide(){
       hint:`空にして保存すると「${defaultTitle}」に戻ります。`,
       onSave: async (name) => { await store.updFolder(f.id, {title: name || defaultTitle}); },
     }), text:"✎ 名前を変更"});
-    list.append(h("div",{class:"fitem"}, h("button",{class:"fbtn", type:"button", "aria-current": String(f.id === currentFid), onclick:()=>selectFolder(f.id)},
+    const cur = f.id === currentFid;
+    list.append(h("div",{class:`fitem${cur ? " cur" : ""}`}, h("button",{class:"fbtn", type:"button", "aria-current": String(cur), onclick:()=>selectFolder(f.id)},
       h("span",{class:"spine"}),
       h("span",{},
         h("div",{class:"fno"}, `${i + 1}フォルダ目`, latest ? h("span",{class:"latest", text:"最新"}) : null),
@@ -1067,7 +1072,8 @@ function renderSide(){
         h("div",{class:"fs"}, `業者${st.total ?? (f.slots||[]).length}社　`,
           st.missing ? h("b",{class:"n", text:`未提出${st.missing}`}) : "全社提出",
           st.ng ? h("span",{}, "　", h("b",{class:"n", text:`×${st.ng}`})) : null,
-          st.warn ? h("span",{}, "　", h("b",{class:"w", text:`△${st.warn}`})) : null))), renameBtn));
+          st.warn ? h("span",{}, "　", h("b",{class:"w", text:`△${st.warn}`})) : null))),
+      cur ? h("div",{class:"factions"}, renameBtn) : null));
   });
 }
 
