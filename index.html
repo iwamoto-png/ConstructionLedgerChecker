@@ -86,6 +86,12 @@ header.top p{margin:4px 0 0;max-width:64ch}
 .acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .slotinfo{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 12px;margin:0;padding:10px 16px;border-bottom:1px solid var(--line);font-size:.86rem;background:color-mix(in srgb,var(--accent) 5%,var(--surface))}
 .slotinfo dt{color:var(--muted);white-space:nowrap} .slotinfo dd{margin:0;overflow-wrap:anywhere}
+.fitem{display:flex;flex-direction:column;gap:4px}
+.fitem .frename{align-self:flex-end;min-height:34px;padding:2px 12px;font-size:.88rem}
+.dlg{background:var(--surface);color:var(--ink);border-radius:12px;padding:24px;width:min(520px,100%);display:flex;flex-direction:column;gap:12px;box-shadow:0 12px 40px rgba(0,0,0,.35)}
+.dlg input{width:100%;min-height:52px;border:2px solid var(--accent);background:var(--surface);border-radius:8px;padding:8px 12px;font-size:1.15rem;font-weight:700}
+.dlg p{margin:0}
+.dlg p:empty{display:none}
 .titlerow{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
 .titlerow h2{overflow-wrap:anywhere;min-width:0}
 .rename{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
@@ -309,6 +315,19 @@ select{min-height:44px;font-size:1rem;border-width:2px}
 <input type="file" id="slotIn" accept="application/pdf,.pdf" hidden>
 <input type="file" id="restoreIn" accept="application/json,.json" hidden>
 
+<div class="viewer" id="renameBox" hidden role="dialog" aria-modal="true" aria-labelledby="renameTitle">
+  <form class="dlg" id="renameForm" autocomplete="off">
+    <h2 id="renameTitle">名前を変更</h2>
+    <input type="text" id="renameIn" maxlength="60" aria-labelledby="renameTitle">
+    <p class="small muted" id="renameHint"></p>
+    <p class="small" id="renameErr" style="color:var(--ng)"></p>
+    <div class="acts">
+      <button class="btn primary" type="submit">保存する</button>
+      <button class="btn" type="button" id="renameCancel">やめる</button>
+    </div>
+  </form>
+</div>
+
 <div class="viewer" id="viewer" hidden>
   <img id="viewerImg" alt="">
   <div class="cap" id="viewerCap"></div>
@@ -331,12 +350,8 @@ const TIERS = {
 };
 /* 施工体系図（1枚目）は照合の基準。業者ごとの書類を、体系図のその業者の記載と照らし合わせる */
 const MATCH_RULES = [
-  {id:"tm_name", g:"施工体系図との照合", t:"社名が体系図に載っている"},
-  {id:"tm_tier", g:"施工体系図との照合", t:"次数（1次・2次・3次）が体系図と一致", d:"注文者（契約の相手）から判断"},
-  {id:"tm_parent", g:"施工体系図との照合", t:"契約の相手（注文者）が体系図と一致"},
-  {id:"tm_work", g:"施工体系図との照合", t:"工事内容が体系図と一致"},
-  {id:"tm_kouki", g:"施工体系図との照合", t:"工期が体系図と一致"},
-  {id:"tm_shunin", g:"施工体系図との照合", t:"主任技術者が体系図と一致", d:"許可がない業者は対象外"},
+  {id:"tm_name", g:"施工体系図との照合", t:"会社名が体系図に載っている"},
+  {id:"tm_tier", g:"施工体系図との照合", t:"次数（1次・2次・3次）が体系図と一致", d:"注文書の注文者（契約の相手）から判断"},
 ];
 function rulesFor(tier){
   const first = tier === "s1";
@@ -793,7 +808,7 @@ function judgePrompt(obj, slot, folder, rules, orderInfo){
   const pageLines = obj.pages.map(p => `p${p.n}［${p.type || "不明"}］${p.company ? "会社:" + p.company + "／" : ""}${p.unreadable ? "（判読困難）" : ""}${(p.text || "").replace(/\s+/g," ")}`).join("\n");
   const ruleLines = rules.filter(r => r.id !== "order" && r.id !== "tm_name").map(r => `${r.id}: ${r.t}${r.d ? "（" + r.d + "）" : ""}`).join("\n");
   const slotLine = slot
-    ? `会社名:${slot.name}／次数:${TIERS[slot.tier].short}／契約相手:${slot.parent || "記載なし"}／担当工事:${slot.work || "記載なし"}／工期:${slot.kouki || "記載なし"}／主任技術者:${slot.shunin || "記載なし"}／許可:${slot.kyoka || "記載なし"}`
+    ? `会社名:${slot.name}／次数:${TIERS[slot.tier].short}／契約相手:${slot.parent || "記載なし"}／担当工事:${slot.work || "記載なし"}`
     : "（この業者は体系図に載っていません）";
   const info = folder && folder.info ? folder.info : {};
   return `あなたは福岡市の公共建築工事の施工体制台帳を点検する担当者です。
@@ -808,15 +823,9 @@ function judgePrompt(obj, slot, folder, rules, orderInfo){
 ページの並び順の自動チェック結果＝${orderInfo}
 
 ## 施工体系図での記載（照合の基準）
-工事名:${info.koujimei || "不明"}／元請:${info.motouke || "不明"}／全体工期:${info.kouki || "不明"}
-この業者:${slotLine}
-施工体系図との照合（tm_ で始まる項目）は、提出書類（注文書・請書・台帳／再下請負通知書・名簿など）の記載を上の体系図の記載と比べて判定する：
-- tm_tier：注文者が元請なら1次、1次業者なら2次、2次業者なら3次。体系図の次数と違えば ng
-- tm_parent：注文書・請書の注文者名が体系図の契約相手と違えば ng
-- tm_work：工事内容（工種）が体系図と食い違えば ng
-- tm_kouki：工期が体系図と違えば ng。業者の工期が全体工期の範囲外でも ng
-- tm_shunin：主任技術者の氏名が体系図と違えば ng。建設業許可のない業者は na
-- 体系図側が「記載なし」の項目は、書類側が書かれていても warn（体系図の確認が必要）にする
+工事名:${info.koujimei || "不明"}／元請:${info.motouke || "不明"}この業者:${slotLine}
+施工体系図との照合は次数だけを判定する（会社名はシステム側で確認済み。工期は体系図と照合しない）：
+- tm_tier：注文書・請書の注文者が元請なら1次、1次業者なら2次、2次業者なら3次。上の体系図の次数と違えば ng。注文者が読み取れなければ warn
 
 ## 公式ルール（福岡市）
 ${OFFICIAL}
@@ -972,7 +981,7 @@ function counts(...lists){
 function slotInfo(s){
   return h("dl",{class:"slotinfo"},
     h("dt",{text:"体系図の記載"}), h("dd",{},
-      `次数：${TIERS[s.tier].short}　契約相手：${s.parent || "—"}　工事：${s.work || "—"}　工期：${s.kouki || "—"}　主任技術者：${s.shunin || "—"}　許可：${s.kyoka || "—"}`));
+      `会社名：${s.name}　次数：${TIERS[s.tier].short}　契約相手：${s.parent || "—"}　工事：${s.work || "—"}`));
 }
 function renderSlotCard(f, s){
   const t = TIERS[s.tier];
@@ -1043,7 +1052,13 @@ function renderSide(){
   folders.forEach((f, i) => {
     const st = f.stats || {};
     const latest = i === folders.length - 1;
-    list.append(h("button",{class:"fbtn", type:"button", "aria-current": String(f.id === currentFid), onclick:()=>selectFolder(f.id)},
+    const defaultTitle = "体系図 " + ((f.info || {}).date || fmtDate(f.createdAt));
+    const renameBtn = h("button",{class:"btn small frename", type:"button", "aria-label":`${f.title || f.fileName} の名前を変更`, onclick:()=>openRename({
+      heading:"フォルダ名を変更", value:f.title || "", placeholder:defaultTitle,
+      hint:`空にして保存すると「${defaultTitle}」に戻ります。`,
+      onSave: async (name) => { await store.updFolder(f.id, {title: name || defaultTitle}); },
+    }), text:"✎ 名前を変更"});
+    list.append(h("div",{class:"fitem"}, h("button",{class:"fbtn", type:"button", "aria-current": String(f.id === currentFid), onclick:()=>selectFolder(f.id)},
       h("span",{class:"spine"}),
       h("span",{},
         h("div",{class:"fno"}, `${i + 1}フォルダ目`, latest ? h("span",{class:"latest", text:"最新"}) : null),
@@ -1051,7 +1066,7 @@ function renderSide(){
         h("div",{class:"fs"}, `業者${st.total ?? (f.slots||[]).length}社　`,
           st.missing ? h("b",{class:"n", text:`未提出${st.missing}`}) : "全社提出",
           st.ng ? h("span",{}, "　", h("b",{class:"n", text:`×${st.ng}`})) : null,
-          st.warn ? h("span",{}, "　", h("b",{class:"w", text:`△${st.warn}`})) : null))));
+          st.warn ? h("span",{}, "　", h("b",{class:"w", text:`△${st.warn}`})) : null))), renameBtn));
   });
 }
 
@@ -1113,22 +1128,13 @@ function renderMain(){
   })) : null;
 
   const defaultTitle = "体系図 " + ((f.info || {}).date || fmtDate(f.createdAt));
-  const commitRename = async () => {
-    const name = renameDraft.trim().slice(0, 60) || defaultTitle;
-    renaming = null;
-    try { await store.updFolder(f.id, {title:name}); } catch(e){ notes.db = dbErrText(e); }
-    render();
-  };
-  const titleEl = renaming === f.id
-    ? h("form",{class:"rename", onsubmit:(e)=>{ e.preventDefault(); commitRename(); }},
-        h("input",{type:"text", id:"renameIn", value:renameDraft, maxlength:"60", "aria-label":"フォルダ名", placeholder:defaultTitle,
-          oninput:(e)=>{ renameDraft = e.target.value; },
-          onkeydown:(e)=>{ if (e.key === "Escape"){ e.preventDefault(); renaming = null; render(); } }}),
-        h("button",{class:"btn primary small", type:"submit", text:"保存"}),
-        h("button",{class:"btn small", type:"button", onclick:()=>{ renaming = null; render(); }, text:"やめる"}))
-    : h("div",{class:"titlerow"},
-        h("h2",{text:f.title || f.fileName}),
-        h("button",{class:"btn small", type:"button", onclick:()=>{ renaming = f.id; renameDraft = f.title || ""; render(); const el = document.getElementById("renameIn"); if (el){ el.focus(); el.select(); } }, text:"名前を変更"}));
+  const titleEl = h("div",{class:"titlerow"},
+    h("h2",{text:f.title || f.fileName}),
+    h("button",{class:"btn small", type:"button", onclick:()=>openRename({
+      heading:"フォルダ名を変更", value:f.title || "", placeholder:defaultTitle,
+      hint:`空にして保存すると「${defaultTitle}」に戻ります。`,
+      onSave: async (name) => { await store.updFolder(f.id, {title: name || defaultTitle}); },
+    }), text:"✎ フォルダ名を変更"}));
 
   main.append(h("section",{class:"panel"},
     h("div",{class:"phead"},
@@ -1243,6 +1249,11 @@ function renderCard(v, f){
       h("span",{class:"small", style:"font-family:var(--f-mono)"},
         h("span",{style:"color:var(--ng)", text:`×${c.ng}`}), "　", h("span",{style:"color:var(--warn)", text:`△${c.warn + c.todo}`}), "　", h("span",{style:"color:var(--ok)", text:`○${c.ok}`})),
       assign, tierSel,
+      !busy && !work[v.id] ? h("button",{class:"btn small", type:"button", onclick:()=>openRename({
+        heading:"業者名を変更", value:d.name || "", placeholder:(slot && slot.name) || d.fileName,
+        hint:"この業者の詳細に表示する名前です。空にして保存すると、体系図の会社名（またはファイル名）で表示します。",
+        onSave: async (name) => { await store.updVendor(f.id, v.id, {name}); },
+      }), text:"✎ 名前を変更"}) : null,
       !busy ? h("button",{class:"btn small", type:"button", onclick:()=>rejudge(v, f, {}, true), text: hasImages(v) ? "再チェック" : "再判定"}) : null,
       !busy ? h("button",{class:"btn danger small", type:"button", onclick:async()=>{
           if (confirmDel !== "v:"+v.id){ confirmDel = "v:"+v.id; render(); setTimeout(()=>{ if (confirmDel === "v:"+v.id){ confirmDel = null; render(); } }, 5000); return; }
@@ -1387,12 +1398,32 @@ async function restore(file){
   } catch(e){ msg.textContent = "戻せませんでした：" + (e && e.message || e); }
 }
 
-function render(){
-  const a = document.activeElement;
-  const keep = a && a.id === "renameIn" ? [a.selectionStart, a.selectionEnd] : null;
-  renderBanners(); renderSide(); renderMain();
-  if (keep){ const el = document.getElementById("renameIn"); if (el){ el.focus(); try { el.setSelectionRange(keep[0], keep[1]); } catch(e){} } }
+function render(){ renderBanners(); renderSide(); renderMain(); }
+
+/* ---------- 名前の変更（画面の描き直しに影響されない別の小窓） ---------- */
+let renameSave = null;
+const renameBox = document.getElementById("renameBox");
+const renameIn = document.getElementById("renameIn");
+function openRename({heading, value, placeholder, hint, onSave}){
+  document.getElementById("renameTitle").textContent = heading;
+  document.getElementById("renameHint").textContent = hint || "";
+  document.getElementById("renameErr").textContent = "";
+  renameIn.value = value || "";
+  renameIn.placeholder = placeholder || "";
+  renameSave = onSave;
+  renameBox.hidden = false;
+  renameIn.focus(); renameIn.select();
 }
+function closeRename(){ renameBox.hidden = true; renameSave = null; }
+document.getElementById("renameForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (!renameSave) return;
+  try { await renameSave(renameIn.value.trim().slice(0, 60)); closeRename(); render(); }
+  catch(err){ document.getElementById("renameErr").textContent = dbErrText(err); }
+});
+document.getElementById("renameCancel").addEventListener("click", closeRename);
+renameBox.addEventListener("click", e => { if (e.target === renameBox) closeRename(); });
+renameIn.addEventListener("keydown", e => { if (e.key === "Escape" && !e.isComposing){ e.preventDefault(); closeRename(); } });
 
 /* ---------- 入力 ---------- */
 const nf = document.getElementById("newFolder");
