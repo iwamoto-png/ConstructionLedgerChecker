@@ -93,6 +93,15 @@ header.top p{margin:4px 0 0;max-width:64ch}
 .fitem .fbtn .spine{display:none}
 .fitem .factions{display:flex;padding:0 12px 10px}
 .fitem .frename{width:100%;min-height:38px;font-size:.92rem;background:var(--surface)}
+/* ページ画像の拡大表示 */
+#viewer{justify-content:flex-start;gap:8px}
+.vbar{width:100%;max-width:1200px;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between}
+.vhint{color:#f2f2f2;font-size:.95rem}
+.vbtns{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.vzoom{color:#fff;font-family:var(--f-mono);font-weight:700;min-width:4.2em;text-align:center}
+.vstage{position:relative;flex:1;width:100%;max-width:1200px;min-height:0;overflow:hidden;border-radius:6px;background:#2a2f33;cursor:grab;touch-action:none}
+.vstage.dragging{cursor:grabbing}
+#vstage img{position:absolute;left:0;top:0;max-width:none;max-height:none;transform-origin:0 0;background:#fff;user-select:none;-webkit-user-drag:none;border-radius:0}
 .dlg{background:var(--surface);color:var(--ink);border-radius:12px;padding:24px;width:min(520px,100%);display:flex;flex-direction:column;gap:12px;box-shadow:0 12px 40px rgba(0,0,0,.35)}
 .dlg input{width:100%;min-height:52px;border:2px solid var(--accent);background:var(--surface);border-radius:8px;padding:8px 12px;font-size:1.15rem;font-weight:700}
 .dlg p{margin:0}
@@ -417,9 +426,18 @@ body{background:var(--bg)}
 </div>
 
 <div class="viewer" id="viewer" hidden>
-  <img id="viewerImg" alt="">
+  <div class="vbar">
+    <span class="vhint">マウスのホイールで拡大・縮小、ドラッグで移動、ダブルクリックで元の大きさ</span>
+    <div class="vbtns">
+      <button class="btn" type="button" id="zoomOut" aria-label="縮小">－ 縮小</button>
+      <span class="vzoom" id="zoomPct">100%</span>
+      <button class="btn" type="button" id="zoomIn" aria-label="拡大">＋ 拡大</button>
+      <button class="btn" type="button" id="zoomReset">元の大きさ</button>
+      <button class="btn" type="button" id="viewerClose">閉じる</button>
+    </div>
+  </div>
+  <div class="vstage" id="vstage"><img id="viewerImg" alt="" draggable="false"></div>
   <div class="cap" id="viewerCap"></div>
-  <button class="btn" type="button" id="viewerClose">閉じる</button>
 </div>
 
 <script type="module">
@@ -1136,7 +1154,49 @@ function openViewer(cacheId, n, caption, imgId){
   document.getElementById("viewerCap").textContent = caption + (src ? "" : "\n（このページの画像は保存されていません）");
   document.getElementById("viewer").hidden = false;
   document.getElementById("viewerClose").focus();
+  if (src){ if (img.complete && img.naturalWidth) zoomFit(); }
 }
+
+/* ---------- 拡大・縮小・移動 ---------- */
+const zv = {s:1, x:0, y:0, fit:1};
+function zoomApply(){
+  const img = document.getElementById("viewerImg");
+  img.style.transform = `translate(${zv.x}px, ${zv.y}px) scale(${zv.s})`;
+  document.getElementById("zoomPct").textContent = Math.round(zv.s / zv.fit * 100) + "%";
+}
+function zoomFit(){
+  const img = document.getElementById("viewerImg"), st = document.getElementById("vstage");
+  const W = st.clientWidth, H = st.clientHeight, w = img.naturalWidth || 1, hh = img.naturalHeight || 1;
+  zv.fit = Math.min(W / w, H / hh) || 1;
+  zv.s = zv.fit; zv.x = (W - w * zv.s) / 2; zv.y = (H - hh * zv.s) / 2;
+  zoomApply();
+}
+function zoomAt(factor, cx, cy){
+  const ns = Math.min(zv.fit * 8, Math.max(zv.fit * 0.5, zv.s * factor));
+  const k = ns / zv.s;
+  zv.x = cx - (cx - zv.x) * k; zv.y = cy - (cy - zv.y) * k; zv.s = ns;
+  zoomApply();
+}
+function zoomCenter(factor){ const st = document.getElementById("vstage"); zoomAt(factor, st.clientWidth / 2, st.clientHeight / 2); }
+(() => {
+  const st = document.getElementById("vstage"), img = document.getElementById("viewerImg");
+  img.addEventListener("load", zoomFit);
+  st.addEventListener("wheel", e => {
+    e.preventDefault();
+    const r = st.getBoundingClientRect();
+    zoomAt(e.deltaY < 0 ? 1.15 : 1 / 1.15, e.clientX - r.left, e.clientY - r.top);
+  }, {passive:false});
+  let drag = null;
+  st.addEventListener("pointerdown", e => { drag = {x:e.clientX, y:e.clientY, ox:zv.x, oy:zv.y}; st.setPointerCapture(e.pointerId); st.classList.add("dragging"); });
+  st.addEventListener("pointermove", e => { if (!drag) return; zv.x = drag.ox + e.clientX - drag.x; zv.y = drag.oy + e.clientY - drag.y; zoomApply(); });
+  const end = () => { drag = null; st.classList.remove("dragging"); };
+  st.addEventListener("pointerup", end); st.addEventListener("pointercancel", end);
+  st.addEventListener("dblclick", zoomFit);
+  document.getElementById("zoomIn").addEventListener("click", () => zoomCenter(1.25));
+  document.getElementById("zoomOut").addEventListener("click", () => zoomCenter(1 / 1.25));
+  document.getElementById("zoomReset").addEventListener("click", zoomFit);
+  window.addEventListener("resize", () => { if (!document.getElementById("viewer").hidden) zoomFit(); });
+})();
 
 function renderBanners(){
   const b = document.getElementById("banners");
@@ -1568,7 +1628,13 @@ window.addEventListener("hashchange", () => { const id = hashFid(); if (id && id
 const viewer = document.getElementById("viewer");
 document.getElementById("viewerClose").addEventListener("click", () => { viewer.hidden = true; });
 viewer.addEventListener("click", e => { if (e.target === viewer) viewer.hidden = true; });
-document.addEventListener("keydown", e => { if (e.key === "Escape") viewer.hidden = true; });
+document.addEventListener("keydown", e => {
+  if (viewer.hidden) return;
+  if (e.key === "Escape") viewer.hidden = true;
+  else if (e.key === "+" || e.key === "=") zoomCenter(1.25);
+  else if (e.key === "-") zoomCenter(1 / 1.25);
+  else if (e.key === "0") zoomFit();
+});
 
 document.getElementById("backupBtn").addEventListener("click", backup);
 document.getElementById("restoreBtn").addEventListener("click", () => document.getElementById("restoreIn").click());
