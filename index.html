@@ -299,6 +299,10 @@ body{background:var(--bg)}
 .newfolder{--bar:var(--accent)}
 .fitem{--bar:var(--line)}
 .fitem.cur{--bar:var(--accent)}
+/* 左右の段をそろえる：1段目（見出し／前後のフォルダ）と2段目（体系図を入れる／体系図の板）の上端を同じ高さに */
+.side,.main{gap:18px}
+.side h2.sec,.fnav{min-height:44px;margin:0;align-items:center}
+.side .flist{margin-top:-8px}
 .footnote{margin:6px 0 0;padding:14px 18px;border-radius:10px;background:var(--surface);border-left:6px solid var(--warn);font-size:.98rem;box-shadow:var(--shadow)}
 @media (max-width:900px){
   .layout{grid-template-columns:220px minmax(0,1fr);gap:14px}
