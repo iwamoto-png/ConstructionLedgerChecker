@@ -1,0 +1,1335 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>施工体制台帳チェッカー</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: 左に「体系図フォルダ」の一覧、右に開いたフォルダ（体系図→業者一覧→業者の詳細）。業者は区分色のインデックスで識別 */
+:root{
+  --bg:#f3f4f1; --surface:#ffffff; --sunk:#ebede8; --ink:#1c2226; --muted:#5b666d; --line:#d6dad5;
+  --accent:#1f5a85;
+  --ok:#1d7a4c; --ng:#c42d2d; --warn:#a86a10; --na:#87918f; --todo:#5b666d;
+  --t1:#dd7414; --t2:#2c67c4; --t3:#2a8f55; --tx:#6b6f76;
+  --f-body:"BIZ UDPGothic","Hiragino Sans","Yu Gothic UI","Meiryo",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"Consolas",monospace;
+  --on-tag:#ffffff;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#13171a; --surface:#1b2125; --sunk:#161b1e; --ink:#e5e9ea; --muted:#9aa5ab; --line:#2d363b;
+  --accent:#6fa9d6;
+  --ok:#4cc38a; --ng:#ff6e6e; --warn:#e3a94a; --na:#7d8889; --todo:#9aa5ab;
+  --t1:#f0954a; --t2:#6d9fff; --t3:#5cc488; --tx:#a3a7ae; --on-tag:#111417; color-scheme:dark;
+}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6}
+.wrap{max-width:1280px;margin:0 auto;padding-block:20px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:18px}
+h1{font-size:1.5rem;margin:0;letter-spacing:.02em;text-wrap:balance}
+h2{font-size:1.1rem;margin:0;text-wrap:balance}
+h3{font-size:.95rem;margin:0}
+.muted{color:var(--muted)} .small{font-size:.85rem}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+[hidden]{display:none!important}
+img{max-width:100%}
+header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+header.top p{margin:4px 0 0;max-width:64ch}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.85rem;color:var(--muted);align-items:center}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.banner{border:1px solid color-mix(in srgb,var(--warn) 50%,var(--line));background:color-mix(in srgb,var(--warn) 8%,var(--surface));border-radius:8px;padding:10px 14px;font-size:.9rem}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:6px 13px;white-space:nowrap}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--surface);font-weight:700}
+.btn.danger{color:var(--ng)}
+.btn.small{padding:3px 10px;font-size:.85rem}
+.btn:disabled{opacity:.5;cursor:default}
+
+/* AI設定 */
+.settings{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.settings .rowf{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.settings input[type=password],.settings input[type=text]{flex:1;min-width:0;max-width:520px;border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:6px 10px;font-family:var(--f-mono)}
+.settings p{margin:0}
+.keystate{font-size:.85rem}
+.keystate.on{color:var(--ok)} .keystate.off{color:var(--ng)}
+
+.layout{display:grid;grid-template-columns:270px minmax(0,1fr);gap:20px;align-items:start}
+.side{display:flex;flex-direction:column;gap:10px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px);max-height:calc(100vh - 24px);overflow-y:auto;padding-right:2px}
+.side h2{font-size:.85rem;letter-spacing:.08em;color:var(--muted)}
+.newfolder{display:flex;flex-direction:column;gap:4px;border:2px dashed color-mix(in srgb,var(--accent) 45%,var(--line));border-radius:8px;padding:12px;background:var(--surface);cursor:pointer}
+.newfolder.over{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,var(--surface))}
+.newfolder strong{color:var(--accent)}
+.flist{display:flex;flex-direction:column;gap:6px}
+.fbtn{display:grid;grid-template-columns:8px minmax(0,1fr);gap:10px;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:9px 10px 9px 0;overflow:hidden}
+.fbtn .spine{background:var(--line);margin:-9px 0}
+.fbtn[aria-current="true"]{border-color:var(--accent)}
+.fbtn[aria-current="true"] .spine{background:var(--accent)}
+.fbtn .ft{font-weight:700;overflow-wrap:anywhere;line-height:1.35}
+.fbtn .fs{font-size:.78rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.fbtn .fs b.n{color:var(--ng)} .fbtn .fs b.w{color:var(--warn)}
+.fbtn.busy{border-style:dashed;cursor:default}
+.fno{font-family:var(--f-mono);font-size:.74rem;color:var(--muted);letter-spacing:.04em;display:flex;gap:6px;align-items:center}
+.fno.big{font-size:.85rem;color:var(--ink)}
+.latest{font-family:var(--f-body);font-size:.7rem;font-weight:700;color:var(--accent);border:1px solid var(--accent);border-radius:3px;padding:0 5px;line-height:1.5}
+.backup{display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--line);padding-top:10px;margin-top:4px}
+.backup .btn{text-align:left}
+
+.main{display:flex;flex-direction:column;gap:18px;min-width:0}
+.fnav{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;min-width:0}
+.phead{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:flex-start;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line)}
+.phead .meta{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 12px;font-size:.88rem;margin:6px 0 0}
+.phead .meta dt{color:var(--muted)} .phead .meta dd{margin:0;overflow-wrap:anywhere}
+.acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.taikei-body{display:grid;grid-template-columns:minmax(0,1fr) auto}
+.thumbs{display:flex;gap:8px;padding:12px 16px;border-left:1px solid var(--line);background:var(--sunk);flex-wrap:wrap;align-content:flex-start;max-width:280px}
+.thumbs button{border:1px solid var(--line);padding:3px;background:var(--surface);border-radius:4px}
+.thumbs img{display:block;width:110px;height:auto;background:#fff}
+
+.drop{border:2px dashed color-mix(in srgb,var(--accent) 45%,var(--line));border-radius:10px;background:var(--surface);padding:16px 18px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;cursor:pointer}
+.drop.over{background:color-mix(in srgb,var(--accent) 8%,var(--surface));border-color:var(--accent)}
+.drop p{margin:2px 0 0}
+
+.tablebox{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font-size:.78rem;color:var(--muted);font-weight:400;letter-spacing:.04em;white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+td.num{text-align:center;font-family:var(--f-mono);width:42px}
+td.num.zero{color:var(--na)}
+td.num.ng:not(.zero){color:var(--ng);font-weight:700}
+td.num.warn:not(.zero){color:var(--warn);font-weight:700}
+td.num.ok:not(.zero){color:var(--ok)}
+tr.vrow{cursor:pointer}
+tr.vrow:hover td{background:var(--sunk)}
+tr.vrow[aria-selected="true"] td{background:color-mix(in srgb,var(--accent) 9%,var(--surface))}
+tr.missing td{background:color-mix(in srgb,var(--ng) 5%,var(--surface))}
+tr.sep td{font-size:.78rem;color:var(--muted);letter-spacing:.06em;background:var(--sunk);padding:5px 10px}
+.vname{font-weight:700;min-width:12em}
+.vname .ind{display:inline-block;color:var(--muted);font-family:var(--f-mono);font-weight:400}
+.cell-sub{font-size:.82rem;color:var(--muted);min-width:8em}
+.verdict{display:inline-block;padding:1px 10px;border-radius:999px;font-size:.8rem;font-weight:700;white-space:nowrap}
+.verdict.bad{background:color-mix(in srgb,var(--ng) 14%,transparent);color:var(--ng)}
+.verdict.miss{background:var(--ng);color:var(--surface)}
+.verdict.mid{background:color-mix(in srgb,var(--warn) 16%,transparent);color:var(--warn)}
+.verdict.good{background:color-mix(in srgb,var(--ok) 14%,transparent);color:var(--ok)}
+.verdict.busy{background:var(--sunk);color:var(--muted)}
+.tag{display:inline-block;padding:1px 8px;border-radius:4px;font-size:.78rem;font-weight:700;color:var(--on-tag);background:var(--tc);white-space:nowrap}
+.t1{--tc:var(--t1)} .t2{--tc:var(--t2)} .t3{--tc:var(--t3)} .tx{--tc:var(--tx)}
+.copied{font-size:.72rem;color:var(--accent);margin-left:6px;font-weight:400}
+.newbadge{font-size:.72rem;font-weight:700;color:var(--accent);border:1px solid var(--accent);border-radius:3px;padding:0 5px;margin-left:6px}
+
+.card{position:relative;background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--tc);border-radius:0 8px 8px 8px;margin-top:30px}
+.card .index{position:absolute;left:-1px;top:-30px;height:26px;padding:3px 14px 0;background:var(--tc);color:var(--on-tag);font-weight:700;font-size:.85rem;border-radius:6px 6px 0 0;letter-spacing:.05em}
+.card-head{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line)}
+.card-head .name{min-width:0}
+.card-head h2{overflow-wrap:anywhere}
+select{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:5px 8px;max-width:100%}
+.prog{padding:10px 16px;border-bottom:1px solid var(--line);font-size:.88rem;color:var(--muted);display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.bar{flex:1;min-width:120px;height:6px;background:var(--sunk);border-radius:3px;overflow:hidden;max-width:320px}
+.bar i{display:block;height:100%;background:var(--accent);transition:width .3s}
+.err{padding:10px 16px;color:var(--ng);font-size:.9rem;border-bottom:1px solid var(--line)}
+.aisum{padding:10px 16px;border-bottom:1px solid var(--line);font-size:.92rem;background:var(--sunk)}
+.card-body{display:grid;grid-template-columns:minmax(0,1fr) 280px}
+.checks{min-width:0;padding:6px 0}
+.group{padding:8px 16px 2px;font-size:.78rem;letter-spacing:.08em;color:var(--muted);font-weight:700}
+.row{display:grid;grid-template-columns:46px minmax(0,1fr);gap:10px;padding:8px 16px;align-items:start}
+.row + .row{border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
+.row.hide{display:none}
+.row .t{font-weight:700}
+.row .d{font-size:.82rem;color:var(--muted)}
+.row .note{font-size:.88rem;margin-top:2px;overflow-wrap:anywhere}
+.row.s-ng .note{color:var(--ng)} .row.s-warn .note{color:var(--warn)}
+.pchips{display:inline-flex;flex-wrap:wrap;gap:4px;margin-left:6px;vertical-align:middle}
+.pchip{font-family:var(--f-mono);font-size:.75rem;border:1px solid var(--line);border-radius:4px;padding:0 5px;background:var(--surface)}
+.pchip:hover{border-color:var(--accent)}
+.manual{font-size:.72rem;color:var(--accent);margin-left:6px;font-weight:400}
+.st{width:40px;height:30px;border-radius:6px;border:1.5px solid var(--sc);color:var(--sc);background:color-mix(in srgb,var(--sc) 12%,transparent);font-weight:700;font-size:1rem;line-height:1;display:grid;place-items:center}
+.st.mini{width:26px;height:22px;font-size:.85rem}
+.st.ok{--sc:var(--ok)} .st.ng{--sc:var(--ng);background:var(--ng);color:var(--surface)} .st.warn{--sc:var(--warn)} .st.na{--sc:var(--na);background:transparent} .st.todo{--sc:var(--todo);background:transparent;border-style:dashed}
+.pages{border-left:1px solid var(--line);padding:12px;min-width:0;background:var(--sunk)}
+.pages h3{margin:0 0 8px;font-size:.8rem;color:var(--muted);letter-spacing:.06em;font-weight:400}
+.plist{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:8px}
+.pg{display:flex;flex-direction:column;gap:3px;border:1px solid var(--line);border-radius:4px;background:var(--surface);padding:4px;text-align:left}
+.pg:hover{border-color:var(--accent)}
+.pg img,.pg .ph{width:100%;aspect-ratio:1/1.414;object-fit:contain;background:#fff;border:1px solid var(--line)}
+.pg .ph{background:repeating-linear-gradient(0deg,var(--sunk) 0 6px,var(--surface) 6px 8px)}
+.pg .pn{font-family:var(--f-mono);font-size:.7rem;color:var(--muted)}
+.pg .pt{font-size:.72rem;font-weight:700;line-height:1.3;overflow-wrap:anywhere}
+.pg.flag .pt{color:var(--warn)}
+
+.empty{padding:28px 20px;color:var(--muted);border:1px dashed var(--line);border-radius:10px;background:var(--surface)}
+.empty ol{margin:10px 0 0;padding-left:1.4em;display:grid;gap:6px;color:var(--ink)}
+.viewer{position:fixed;inset:0;background:rgba(10,12,14,.8);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:16px;z-index:50}
+.viewer img{max-height:76vh;max-width:100%;background:#fff;border-radius:4px}
+.viewer .cap{color:#f2f2f2;max-width:72ch;font-size:.9rem;white-space:pre-wrap;overflow-y:auto;max-height:18vh}
+.viewer .btn{background:#fff;color:#111}
+
+@media (max-width:900px){
+  .layout{grid-template-columns:190px minmax(0,1fr);gap:14px}
+  .newfolder .small{display:none}
+  .card-body,.taikei-body{grid-template-columns:minmax(0,1fr)}
+  .pages,.thumbs{border-left:0;border-top:1px solid var(--line);max-width:none}
+  .drop{grid-template-columns:1fr}
+}
+@media (max-width:560px){
+  .layout{grid-template-columns:minmax(0,1fr)}
+  .side{position:static;max-height:none}
+}
+@media (prefers-reduced-motion:reduce){.bar i{transition:none}}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>施工体制台帳チェッカー</h1>
+      <p class="muted">施工体系図を1枚入れると、それが1つのフォルダになります。フォルダに業者ごとのPDFを入れると、体系図と照らし合わせて未提出の業者と書類の漏れを判定します。</p>
+    </div>
+    <div class="legend" aria-label="判定の見方">
+      <span><b class="st mini ng">×</b>不足・不備</span>
+      <span><b class="st mini warn">△</b>目で確認</span>
+      <span><b class="st mini ok">○</b>確認済み</span>
+      <span><b class="st mini na">－</b>対象外</span>
+      <button class="btn small" type="button" id="settingsBtn">AI設定</button>
+    </div>
+  </header>
+
+  <section class="settings" id="settings" hidden aria-label="AI設定">
+    <h2>AI設定（Anthropic APIキー）</h2>
+    <p class="small muted">PDFの読み取りにはAnthropicのAPIキーが必要です。キーはこのパソコンのこのブラウザにだけ保存され、読み取りのときにAnthropicへ直接送られます。共用パソコンでは使い終わったら「キーを消す」を押してください。</p>
+    <div class="rowf">
+      <input type="password" id="keyIn" placeholder="sk-ant-…" autocomplete="off" spellcheck="false" aria-label="APIキー">
+      <button class="btn primary" type="button" id="keySave">保存</button>
+      <button class="btn" type="button" id="keyClear">キーを消す</button>
+      <span class="keystate" id="keyState"></span>
+    </div>
+  </section>
+
+  <div id="banners"></div>
+
+  <div class="layout">
+    <aside class="side" aria-label="体系図フォルダ">
+      <h2>体系図フォルダ</h2>
+      <label class="newfolder" id="newFolder" for="taikeiIn">
+        <strong>＋ 施工体系図を入れる</strong>
+        <span class="small muted">体系図だけのPDFをドロップ／クリック。新しいフォルダができます。</span>
+      </label>
+      <div class="flist" id="flist"></div>
+      <div class="backup">
+        <button class="btn small" type="button" id="backupBtn">バックアップを保存</button>
+        <button class="btn small" type="button" id="restoreBtn">バックアップから戻す</button>
+        <span class="small muted" id="backupMsg"></span>
+      </div>
+    </aside>
+    <main class="main" id="main"></main>
+  </div>
+
+  <p class="muted small">判定はAIの読み取りに基づく下書きです。×・△は必ず原本で確認してください。判定記号をクリックすると手動で切り替えられます（○→×→△→－）。フォルダ・判定結果・ページ画像はこのブラウザの中に保存され、閉じても残ります。別のパソコンへ移すときや念のための控えには「バックアップを保存」を使ってください。</p>
+</div>
+
+<input type="file" id="taikeiIn" accept="application/pdf,.pdf" hidden>
+<input type="file" id="vendorIn" accept="application/pdf,.pdf" multiple hidden>
+<input type="file" id="slotIn" accept="application/pdf,.pdf" hidden>
+<input type="file" id="restoreIn" accept="application/json,.json" hidden>
+
+<div class="viewer" id="viewer" hidden>
+  <img id="viewerImg" alt="">
+  <div class="cap" id="viewerCap"></div>
+  <button class="btn" type="button" id="viewerClose">閉じる</button>
+</div>
+
+<script type="module">
+import Anthropic from "https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@1.6.0/+esm";
+
+/* ================= 設定 ================= */
+const MODEL = "claude-opus-5-5";
+const VENDOR_BATCH = 4;     // 業者PDFは1回に何ページずつ読ませるか
+const TAIKEI_MAX_IMAGES = 9;
+
+/* ================= ルール ================= */
+const TIERS = {
+  s1:{label:"1次下請（施工体制台帳）", short:"1次", cls:"t1"},
+  s2:{label:"2次下請（再下請負通知書）", short:"2次", cls:"t2"},
+  s3:{label:"3次以降（再下請負通知書）", short:"3次〜", cls:"t3"},
+};
+const TAIKEI_CHECKS = [
+  {id:"t_date", t:"体系図の日付（作成日・提出日）の記載"},
+  {id:"t_kouki", t:"全体と各業者の工期の記載"},
+  {id:"t_work", t:"全業者の担当工事と主任技術者の記載"},
+];
+function rulesFor(tier){
+  const first = tier === "s1";
+  const L = [
+    {id:"t_match", g:"体系図との照合", t:"体系図の記載（会社名・次数・契約相手・工期）と一致"},
+    {id:"s_order", g:"書類", t:"⑦ 注文書（契約書でも可）"},
+    {id:"s_ukesho", g:"書類", t:"⑧ 注文請書（契約書でも可）"},
+    {id:"s_mitsumori", g:"書類", t:"⑨ 見積書（相手が発行したもの）", d:"注文書等に数量内訳があれば不要"},
+    {id:"s_yakkan", g:"書類", t:"⑩ 契約約款", d:"⑦⑧に重要14項目の記載があれば不要"},
+  ];
+  if (first) L.push({id:"s_kihon", g:"書類", t:"基本契約書"});
+  L.push(
+    {id:"s_daicho", g:"書類", t: first ? "⑪ 施工体制台帳（下請負人に関する事項）" : "⑪ 再下請負通知書（再下請負関係）"},
+    {id:"s_kyoka", g:"書類", t:"建設業許可証の写し", d: first ? "" : "許可がない業者は対象外（主任技術者も不要）"},
+    {id:"s_shikaku", g:"書類", t:"主任技術者の資格免許、または10年以上の実務証明"},
+    {id:"s_hoken", g:"書類", t:"主任技術者の保険証写し", d:"マイナ保険証の場合は従業員情報ページの印刷でも可"},
+    {id:"s_meibo", g:"書類", t:"⑫ 作業員名簿"},
+    {id:"s_kouki", g:"契約・台帳", t:"工期が注文書・請書・台帳で一致"},
+    {id:"s_date", g:"契約・台帳", t:"契約日（請書の発注日）など日付の記載漏れ・矛盾がない"},
+    {id:"s_company", g:"契約・台帳", t:"会社名・住所・代表者が書類間で一致", d: first ? "" : "代表者名の記載がなければ代表者は確認不要"},
+    {id:"s_shukyu", g:"契約・台帳", t:"約款に週休2日の記載"},
+    {id:"s_fukuri", g:"契約・台帳", t:"法定福利費の記載", d: first ? "約款に記載" : "約款、または内訳に記載があればOK"},
+    {id:"s_utiwake", g:"契約・台帳", t:"内訳が具体的な数量で書かれている（「一式」のみはNG）"},
+    {id:"s_inshi", g:"契約・台帳", t:"収入印紙の貼付"},
+    {id:"s_kuronuri", g:"契約・台帳", t:"金額が黒塗りされていない"},
+    {id:"s_kyoka_match", g:"契約・台帳", t:"許可番号・許可年月日（有効期間の始期）が台帳と一致", d:"更新前の許可証があればその日からの記載でOK"},
+    {id:"s_hoken_company", g:"契約・台帳", t:"保険証の事業所名が自社（主任技術者が社員）"},
+    {id:"s_shaho", g:"契約・台帳", t:"社会保険の未加入がない", d:"適用除外は理由が説明できること"},
+  );
+  if (!first) L.push({id:"s_in", g:"契約・台帳", t:"再下請負通知書の押印", d:"「印」欄が無ければ不要"});
+  L.push(
+    {id:"w_dates", g:"作業員名簿", t:"作成日・提出日・受入年月日の記載"},
+    {id:"w_marks", g:"作業員名簿", t:"安・現・主 等の表示"},
+    {id:"w_match", g:"作業員名簿", t: first ? "施工体制台帳の記載と一致" : "再下請負通知書の記載と一致"},
+    {id:"w_koyou", g:"作業員名簿", t:"雇用保険番号の記載（例：123-4）"},
+    {id:"w_kentaikyo", g:"作業員名簿", t:"建退共の有無の記載（有なら建退共報告書に記載）"},
+    {id:"order", g:"並び順", t:"提出順（注文書→請書→見積書→約款→台帳→名簿）", d:"ページの種類から自動判定"},
+  );
+  return L;
+}
+const DOC_TYPES = ["施工体系図","注文書","注文請書","下請契約書","基本契約書","見積書","契約約款","施工体制台帳","再下請負通知書","建設業許可証","主任技術者資格証","実務経験証明","健康保険証・雇用証明","専門技術者資格証","作業員名簿","建退共報告書","インデックス・白紙","その他"];
+const ORDER_RANK = {"注文書":1,"下請契約書":1,"基本契約書":1,"注文請書":2,"見積書":3,"契約約款":4,"施工体制台帳":5,"再下請負通知書":5,"建設業許可証":5,"主任技術者資格証":5,"実務経験証明":5,"健康保険証・雇用証明":5,"作業員名簿":6,"建退共報告書":6};
+const OFFICIAL = `- 施工体制台帳・再下請負通知書・下請契約書（注文書・請書）・施工体系図の日付を漏れなく記載し、書類間で日付・工期を整合させる
+- 社会保険は未加入がないこと。適用除外は理由が説明できること
+- 工期が延期されたら、台帳・再下請負通知書・下請契約書も変更したものを作る
+- 許可（更新）年月日は許可の有効期間の始期を書く（通知日ではない）
+- 下請契約書（注文書・請書＋約款）は建設業法の重要14項目を網羅。内訳は「○○工事一式」でなく具体的な数量
+- 一次・二次など全ての下請契約書を添付。収入印紙の貼付漏れ・代表者名の未記載に注意
+- 公共工事では下請契約書の金額を黒塗りしない
+- 提出順：⑦注文書 ⑧注文請書（⑦⑧は契約書でも可） ⑨見積書（注文書等に数量内訳があれば不要） ⑩契約約款（⑦⑧に14項目があれば不要） ⑪施工体制台帳（1次）／再下請負通知書（2次以降） ⑫作業員名簿
+- 再下請負通知書の「報告下請負業者」欄に「印」が無ければ押印は不要`;
+const INHOUSE = `- 1次（JVと契約）は施工体制台帳（下請負人に関する事項）、2次・3次は再下請負通知書（再下請負関係）で確認する
+- 注文書・注文請書：工期に間違いがないか。2次以降は契約日（請書発注日）、会社名・住所も確認（代表者名の記載がなければ代表者は確認不要）
+- 契約約款：週休2日・法定福利費の記載があるか（2次以降は内訳に記載があればOK）
+- 見積書：相手から発行されたものか（1次）
+- 基本契約書：契約日、会社名・住所・代表者に間違いがないか（1次）
+- 建設業の許可：有効期間年月日・番号の違いがないか。更新前の許可証があればその日からの記載でOK。2次以降は許可がない業者もあり、その場合は主任技術者も不要
+- 主任技術者：資格免許、または10年以上の勤務証明があるか。保険証の写しで会社名を見て社員か確認（マイナ保険証で保険証がない場合は従業員情報ページの印刷でOK）
+- 作業員名簿：作成日・提出日・受入年月日の記載／安・現・主等の表示があり、台帳・再下請負通知書の記載と一致／雇用保険番号の記載（例 123-4）／建退共の有無の記載、有なら建退共報告書に記載があるか`;
+
+const STATUS = {ok:{sym:"○",label:"確認済み"}, ng:{sym:"×",label:"不足・不備"}, warn:{sym:"△",label:"目で確認"}, na:{sym:"－",label:"対象外"}, todo:{sym:"?",label:"未判定"}};
+const CYCLE = ["ok","ng","warn","na"];
+
+/* ================= 状態 ================= */
+let folders = [];
+let foldersLoaded = false;
+let currentFid = null;
+let vendorDocs = {};
+let work = {};
+let taikeiWork = null;
+let imgCache = {};     // 取り込み直後のページ画像 {cacheId: {n: {url, blob}}}
+let imgUrls = {};      // 保存済み画像のURL {imageId: objectURL}
+let selectedVid = null;
+let selByFolder = {};
+let onlyIssues = false;
+let notes = {db:"", ai:""};
+let queue = Promise.resolve();
+let confirmDel = null;
+let pendingSlot = null;
+
+const pdfjs = window.pdfjsLib || window["pdfjs-dist/build/pdf"];
+if (pdfjs) { try { pdfjs.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"; } catch(e){} }
+
+function h(tag, props, ...kids){
+  const el = document.createElement(tag);
+  for (const [k,v] of Object.entries(props || {})){
+    if (v == null || v === false) continue;
+    if (k === "class") el.className = v;
+    else if (k === "text") el.textContent = v;
+    else if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
+    else el.setAttribute(k, v === true ? "" : v);
+  }
+  for (const c of kids.flat()){
+    if (c == null || c === false) continue;
+    el.append(c instanceof Node ? c : document.createTextNode(String(c)));
+  }
+  return el;
+}
+const newId = p => p + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+const clone = o => JSON.parse(JSON.stringify(o || {}));
+const norm = s => String(s || "").normalize("NFKC").replace(/株式会社|有限会社|合同会社|合資会社|\(株\)|\(有\)|（株）|（有）|㈱|㈲|JV|共同企業体/g,"").replace(/[\s・.,、。_\-ー－()（）「」\[\]]/g,"").toLowerCase();
+function sameCompany(a, b){
+  const x = norm(a), y = norm(b);
+  if (x.length < 2 || y.length < 2) return false;
+  return x === y || x.includes(y) || y.includes(x);
+}
+function guessTier(name){
+  const s = String(name).normalize("NFKC");
+  if (/(3|三)次|(4|四)次/.test(s)) return "s3";
+  if (/(2|二)次/.test(s)) return "s2";
+  return "s1";
+}
+function fmtDate(ms){ const d = new Date(ms); return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`; }
+function lsGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+function lsSet(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
+function lsDel(k){ try { localStorage.removeItem(k); } catch(e){} }
+function isPlain(o){ return o && typeof o === "object" && !Array.isArray(o); }
+function deepMerge(base, patch){
+  const out = isPlain(base) ? {...base} : {};
+  for (const [k,v] of Object.entries(patch || {})) out[k] = isPlain(v) && isPlain(out[k]) ? deepMerge(out[k], v) : v;
+  return out;
+}
+function saveFile(name, blob){
+  const url = URL.createObjectURL(blob);
+  const a = h("a",{href:url, download:name});
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+/* ================= 保存（ブラウザ内のIndexedDB） ================= */
+const idb = new Promise((res, rej) => {
+  if (!window.indexedDB){ rej(new Error("このブラウザでは保存機能が使えません")); return; }
+  const r = indexedDB.open("sekou-checker", 1);
+  r.onupgradeneeded = () => {
+    const db = r.result;
+    db.createObjectStore("folders", {keyPath:"id"});
+    db.createObjectStore("vendors", {keyPath:"id"}).createIndex("fid", "fid");
+    db.createObjectStore("images");
+  };
+  r.onsuccess = () => res(r.result);
+  r.onerror = () => rej(r.error);
+});
+function tx(names, mode, fn){
+  return idb.then(db => new Promise((res, rej) => {
+    const t = db.transaction(names, mode);
+    let out;
+    const r = fn(t);
+    if (r && "onsuccess" in r) r.onsuccess = () => { out = r.result; };
+    t.oncomplete = () => res(out);
+    t.onerror = () => rej(t.error);
+    t.onabort = () => rej(t.error || new Error("保存が中断されました"));
+  }));
+}
+const store = {
+  async init(){
+    try {
+      const all = await tx("folders", "readonly", t => t.objectStore("folders").getAll());
+      folders = all || []; sortFolders();
+      foldersLoaded = true;
+      const want = hashFid(), saved = lsGet("sekou.folder");
+      const pick = folders.find(f => f.id === want) || folders.find(f => f.id === saved) || folders[folders.length - 1];
+      if (pick) await selectFolder(pick.id, true);
+    } catch(e){
+      foldersLoaded = true;
+      notes.db = "保存データを読み込めませんでした：" + (e && e.message || e) + "（プライベートブラウズでは保存できません）";
+    }
+    render();
+  },
+  async watchVendors(fid){
+    vendorDocs = {};
+    if (!fid) return;
+    const list = await tx("vendors", "readonly", t => t.objectStore("vendors").index("fid").getAll(fid));
+    if (fid !== currentFid) return;
+    (list || []).forEach(v => { vendorDocs[v.id] = v; });
+    const f = folderById(fid);
+    const ids = Object.values(f && f.pageImgs || {});
+    Object.values(vendorDocs).forEach(v => (v.pages || []).forEach(p => p.img && ids.push(p.img)));
+    loadImageUrls(ids);
+  },
+  async setFolder(fid, data){
+    const rec = {...clone(data), id:fid};
+    await tx("folders", "readwrite", t => t.objectStore("folders").put(rec));
+    folders = folders.filter(f => f.id !== fid).concat(rec); sortFolders(); render();
+  },
+  async updFolder(fid, patch){
+    const cur = folderById(fid); if (!cur) return;
+    const rec = deepMerge(cur, clone(patch)); rec.id = fid;
+    await tx("folders", "readwrite", t => t.objectStore("folders").put(rec));
+    folders = folders.map(f => f.id === fid ? rec : f); render();
+  },
+  async setVendor(fid, vid, data){
+    const rec = {...clone(data), id:vid, fid};
+    await tx("vendors", "readwrite", t => t.objectStore("vendors").put(rec));
+    if (fid === currentFid) vendorDocs[vid] = rec;
+  },
+  async updVendor(fid, vid, patch){
+    const cur = await tx("vendors", "readonly", t => t.objectStore("vendors").get(vid));
+    if (!cur) return;
+    const rec = deepMerge(cur, clone(patch)); rec.id = vid; rec.fid = fid;
+    await tx("vendors", "readwrite", t => t.objectStore("vendors").put(rec));
+    if (fid === currentFid) vendorDocs[vid] = rec;
+  },
+  async delVendor(fid, vid){
+    await tx("vendors", "readwrite", t => t.objectStore("vendors").delete(vid));
+    if (fid === currentFid) delete vendorDocs[vid];
+  },
+  async listVendors(fid){
+    return (await tx("vendors", "readonly", t => t.objectStore("vendors").index("fid").getAll(fid))) || [];
+  },
+  async delFolder(fid){
+    const vs = await this.listVendors(fid);
+    for (const v of vs) await this.delVendor(fid, v.id);
+    await tx("folders", "readwrite", t => t.objectStore("folders").delete(fid));
+    folders = folders.filter(f => f.id !== fid);
+  },
+  async putImage(blob){
+    const id = newId("i");
+    await tx("images", "readwrite", t => t.objectStore("images").put(blob, id));
+    return id;
+  },
+  getImage(id){ return tx("images", "readonly", t => t.objectStore("images").get(id)); },
+  delImage(id){ return tx("images", "readwrite", t => t.objectStore("images").delete(id)); },
+};
+function sortFolders(){ folders.sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0)); }
+function hashFid(){ const m = /^#f-([A-Za-z0-9]+)$/.exec(location.hash || ""); return m ? m[1] : null; }
+function dbErrText(e){
+  if (e && e.name === "QuotaExceededError") return "ブラウザの保存容量がいっぱいです。古いフォルダを削除するか、バックアップを取ってから整理してください。";
+  return "保存できませんでした（" + (e && (e.message || e.name) || "不明") + "）。";
+}
+async function loadImageUrls(ids){
+  const need = [...new Set(ids.filter(id => id && !imgUrls[id]))];
+  if (!need.length) return;
+  for (const id of need){
+    try { const b = await store.getImage(id); if (b) imgUrls[id] = URL.createObjectURL(b); } catch(e){}
+  }
+  render();
+}
+
+/* ---------- ページ画像 ---------- */
+async function uploadPages(cacheId, pageObjs, onProg){
+  let ok = true;
+  for (const p of pageObjs){
+    const c = imgCache[cacheId] && imgCache[cacheId][p.n];
+    if (p.img || !c) continue;
+    try { p.img = await store.putImage(c.blob); imgUrls[p.img] = c.url; }
+    catch(e){ ok = false; if (e && e.name === "QuotaExceededError") break; }
+    onProg && onProg();
+  }
+  return ok;
+}
+function pageSrc(cacheId, n, img){
+  const c = imgCache[cacheId] && imgCache[cacheId][n];
+  if (c) return c.url;
+  return img ? imgUrls[img] || null : null;
+}
+async function blobFor(cacheId, n, img){
+  const c = imgCache[cacheId] && imgCache[cacheId][n];
+  if (c) return c.blob;
+  if (img){ try { return await store.getImage(img); } catch(e){} }
+  return null;
+}
+/* どこからも使われていない画像だけを削除（引継ぎで共有している画像は残す） */
+async function gcAssets(candidates, skipFid){
+  const ids = [...new Set(candidates.filter(Boolean))];
+  if (!ids.length) return;
+  const used = new Set();
+  try {
+    for (const f of folders){
+      if (f.id === skipFid) continue;
+      Object.values(f.pageImgs || {}).forEach(id => used.add(id));
+      (await store.listVendors(f.id)).forEach(v => (v.pages || []).forEach(p => p.img && used.add(p.img)));
+    }
+  } catch(e){ return; }
+  for (const id of ids) if (!used.has(id)) {
+    try { await store.delImage(id); if (imgUrls[id] && !Object.values(imgCache).some(c => Object.values(c).some(x => x.url === imgUrls[id]))) URL.revokeObjectURL(imgUrls[id]); delete imgUrls[id]; } catch(e){}
+  }
+}
+
+/* ================= AI（Anthropic API） ================= */
+let client = null, clientKey = "";
+function getClient(){
+  const key = lsGet("sekou.apikey") || "";
+  if (!key) return null;
+  if (!client || clientKey !== key){ client = new Anthropic({apiKey:key, dangerouslyAllowBrowser:true}); clientKey = key; }
+  return client;
+}
+async function blobToB64(b){
+  const buf = new Uint8Array(await b.arrayBuffer());
+  let s = "";
+  for (let i = 0; i < buf.length; i += 0x8000) s += String.fromCharCode.apply(null, buf.subarray(i, i + 0x8000));
+  return btoa(s);
+}
+function parseJson(text){
+  const t = String(text || "").trim();
+  try { return JSON.parse(t); } catch(e){}
+  const fence = /```(?:json)?\s*([\s\S]*?)```/.exec(t);
+  if (fence){ try { return JSON.parse(fence[1]); } catch(e){} }
+  const a = t.search(/[\[{]/), b = Math.max(t.lastIndexOf("]"), t.lastIndexOf("}"));
+  if (a >= 0 && b > a){ try { return JSON.parse(t.slice(a, b + 1)); } catch(e){} }
+  throw {code:"invalid_json"};
+}
+async function askJson(prompt, images){
+  const c = getClient();
+  if (!c) throw {code:"no_key"};
+  const content = [];
+  for (const b of images || []) content.push({type:"image", source:{type:"base64", media_type:"image/jpeg", data: await blobToB64(b)}});
+  content.push({type:"text", text: prompt + "\n\n回答はJSONだけにしてください（前置きや説明は不要）。"});
+  const msg = await c.beta.messages.create({
+    model: MODEL,
+    max_tokens: 16000,
+    output_config: {effort: "medium"},
+    betas: ["server-side-fallback-2026-07-01"],
+    fallbacks: "default",
+    messages: [{role:"user", content}],
+  });
+  if (msg.stop_reason === "refusal") throw {code:"refused"};
+  if (msg.stop_reason === "max_tokens") throw {code:"invalid_json"};
+  const text = (msg.content || []).filter(b => b.type === "text").map(b => b.text).join("");
+  return parseJson(text);
+}
+function hasKey(){ return !!lsGet("sekou.apikey"); }
+function errText(e){
+  if (e instanceof Anthropic.AuthenticationError) return "APIキーが正しくありません。「AI設定」でキーを確認してください。";
+  if (e instanceof Anthropic.PermissionDeniedError) return "このAPIキーではこのモデルを使えません。";
+  if (e instanceof Anthropic.RateLimitError) return "利用回数の上限に達しました。しばらく待ってから「再チェック」を押してください。";
+  if (e instanceof Anthropic.BadRequestError) return "AIへの依頼が受け付けられませんでした：" + (e.message || "");
+  if (e instanceof Anthropic.APIConnectionError) return "Anthropicに接続できませんでした。ネットワークを確認してください。";
+  if (e instanceof Anthropic.APIError) return "AIでエラーが起きました（" + (e.status || "") + "）。少し待って「再チェック」を押してください。";
+  const c = e && e.code;
+  const m = {
+    no_key:"APIキーが未設定です。右上の「AI設定」でキーを保存すると読み取れます。",
+    invalid_json:"AIの回答をうまく読めませんでした。「再チェック」を押してください。",
+    refused:"AIが回答しませんでした。",
+  };
+  if (c && m[c]) return m[c];
+  return "処理中にエラーが起きました：" + (e && e.message ? e.message : String(e));
+}
+
+async function pdfToPages(file, maxPages, onPage, megapixels){
+  if (!pdfjs) throw new Error("PDF読み込み機能を読み込めませんでした。ページを再読み込みしてください。");
+  const pdf = await pdfjs.getDocument({data: await file.arrayBuffer(), isEvalSupported:false}).promise;
+  const total = Math.min(pdf.numPages, maxPages);
+  const out = [];
+  for (let i = 1; i <= total; i++){
+    const page = await pdf.getPage(i);
+    const vp1 = page.getViewport({scale:1});
+    const vp = page.getViewport({scale: Math.sqrt(megapixels * 1e6 / (vp1.width * vp1.height))});
+    const c = document.createElement("canvas");
+    c.width = Math.floor(vp.width); c.height = Math.floor(vp.height);
+    const ctx = c.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0,0,c.width,c.height);
+    await page.render({canvasContext:ctx, viewport:vp}).promise;
+    const blob = await new Promise(r => c.toBlob(r, "image/jpeg", 0.86));
+    out.push({n:i, blob, url:URL.createObjectURL(blob), canvas:c});
+    onPage && onPage(i, total);
+  }
+  return {pages:out, numPages:pdf.numPages};
+}
+function cropHalves(canvas){
+  const W = canvas.width, H = canvas.height, land = W >= H, ov = 0.06;
+  const parts = land ? [[0,0,W*(0.5+ov),H],[W*(0.5-ov),0,W*(0.5+ov),H]] : [[0,0,W,H*(0.5+ov)],[0,H*(0.5-ov),W,H*(0.5+ov)]];
+  return Promise.all(parts.map(([x,y,w,hh]) => new Promise(r => {
+    const c = document.createElement("canvas"); c.width = Math.floor(w); c.height = Math.floor(hh);
+    c.getContext("2d").drawImage(canvas, x, y, w, hh, 0, 0, c.width, c.height);
+    c.toBlob(r, "image/jpeg", 0.86);
+  })));
+}
+
+/* ---------- 体系図 → フォルダ ---------- */
+function taikeiPrompt(desc){
+  return `添付画像は、福岡市の公共建築工事の「施工体系図（工事作業所災害防止協議会兼施工体系図）」です。${desc}
+読み取って、次の形のJSONだけを返してください：
+{"koujimei":"工事名","motouke":"元請（受注者）名。JVならJV名","date":"体系図の作成日・提出日（記載どおり。無ければ空文字）","kouki":"全体の工期（記載どおり）",
+"vendors":[{"name":"会社名","tier":1,"parent":"契約の相手（1次なら元請名、2次なら注文者の1次業者名）","work":"担当工事（工種）","kouki":"その業者の工期","shunin":"主任技術者名"}],
+"checks":[{"id":"t_date","status":"ok","note":"根拠（40字以内）"},{"id":"t_kouki","status":"ok","note":""},{"id":"t_work","status":"ok","note":""}]}
+- vendors には体系図に載っている下請業者をすべて、上位から順に入れる。元請は入れない。同じ会社が複数の工事で載っている場合は1つにまとめ、workに並べる
+- tier は 1次=1、2次=2、3次以降=3
+- checks の status は ok／ng（記載漏れ）／warn（判読できず要確認）。t_date=体系図の日付が記載されているか、t_kouki=全体と各業者の工期が記載されているか、t_work=全業者に担当工事と主任技術者が記載されているか
+- 読めない文字は推測せず「判読不可」と書く`;
+}
+
+async function createFolder(file){
+  const fid = newId("f");
+  taikeiWork = {fid, fileName:file.name, phase:"render", text:"体系図を画像にしています", error:""};
+  render();
+  try {
+    const {pages, numPages} = await pdfToPages(file, 3, null, 2.4);
+    imgCache[fid] = {};
+    pages.forEach(p => { imgCache[fid][p.n] = {url:p.url, blob:p.blob}; });
+    const data = {title:"", fileName:file.name, createdAt:Date.now(), pageCount:numPages, info:{}, slots:[], checks:{}, stats:{}};
+    if (hasKey()){
+      taikeiWork.text = "AIが体系図を読み取っています（業者の一覧を作成中）"; render();
+      const halves = [];
+      for (const p of pages) halves.push(...await cropHalves(p.canvas));
+      let images, desc;
+      if (pages.length * 3 <= TAIKEI_MAX_IMAGES){
+        images = []; pages.forEach((p,i) => { images.push(p.blob, halves[i*2], halves[i*2+1]); });
+        desc = `画像は各ページごとに「全体図」「拡大図（前半）」「拡大図（後半）」の順で並んでいます（全${pages.length}ページ）。拡大図は細かい文字を読むためのものです。`;
+      } else {
+        images = pages.map(p => p.blob); desc = `画像は体系図の各ページです（${images.length}枚）。`;
+      }
+      const res = await askJson(taikeiPrompt(desc), images);
+      const vs = Array.isArray(res && res.vendors) ? res.vendors : [];
+      data.info = {koujimei:String(res.koujimei || ""), motouke:String(res.motouke || ""), date:String(res.date || ""), kouki:String(res.kouki || "")};
+      data.slots = vs.filter(v => v && v.name).slice(0, 120).map((v,i) => ({
+        key:"k"+(i+1), name:String(v.name).slice(0,60),
+        tier: Number(v.tier) >= 3 ? "s3" : Number(v.tier) === 2 ? "s2" : "s1",
+        parent:String(v.parent || "").slice(0,60), work:String(v.work || "").slice(0,80),
+        kouki:String(v.kouki || "").slice(0,60), shunin:String(v.shunin || "").slice(0,30),
+      }));
+      const ch = Array.isArray(res && res.checks) ? res.checks : [];
+      for (const c of TAIKEI_CHECKS){
+        const it = ch.find(x => x && x.id === c.id);
+        data.checks[c.id] = {status: it && ["ok","ng","warn"].includes(it.status) ? it.status : "warn", note: it ? String(it.note || "").slice(0,100) : ""};
+      }
+    } else {
+      for (const c of TAIKEI_CHECKS) data.checks[c.id] = {status:"todo", note:""};
+    }
+    taikeiWork.text = "体系図の画像を保存しています"; render();
+    const tp = pages.map(p => ({n:p.n}));
+    await uploadPages(fid, tp);
+    data.pageImgs = {};
+    tp.forEach(p => { if (p.img) data.pageImgs[p.n] = p.img; });
+    data.title = "体系図 " + (data.info.date || fmtDate(data.createdAt));
+    data.stats = {total:data.slots.length, missing:data.slots.length, ng:0, warn:0};
+    await store.setFolder(fid, data);
+    taikeiWork = null;
+    await selectFolder(fid);
+    if (!hasKey()) notes.ai = "APIキーが未設定のため、体系図の業者一覧は作られていません。「AI設定」でキーを保存してから体系図を入れ直してください。";
+    render();
+  } catch(e){
+    taikeiWork.phase = "error";
+    taikeiWork.error = e && e.name && /Quota|Transaction|Abort/.test(e.name) ? dbErrText(e) : errText(e);
+    render();
+  }
+}
+
+/* ---------- 業者PDF ---------- */
+function readPrompt(obj, nums){
+  return `あなたは福岡市の公共建築工事で「施工体制台帳」一式を点検する担当者の補助です。
+添付画像は、ある業者（区分: ${TIERS[obj.tier].label}）の提出書類PDFの ${nums.join("、")} ページ目をスキャンしたものです（画像の順番＝ページ順）。
+各ページについて書類の種類を判定し、点検に必要な記載事項を読み取ってください。推測はせず、読めない部分は「判読不可」と書いてください。
+
+書類の種類は次のどれか1つ：${DOC_TYPES.join("／")}
+
+text には、そのページで読み取れたことだけを日本語で簡潔に（最大350字）。該当するものを書く：
+- 会社名・住所・代表者名（注文者側／請負者側の区別）
+- 日付（作成日・契約日・注文日・請書日・提出日・受入年月日）と工期（開始〜終了）。空欄の日付欄があれば「○○欄空欄」
+- 金額の記載の有無、黒塗りの有無、収入印紙の有無、押印の有無（「印」欄があるか）
+- 内訳が数量で書かれているか、「一式」だけか
+- 「週休2日」「法定福利費」の記載の有無
+- 建設業許可の番号・業種・許可年月日（有効期間の始期・終期）
+- 主任技術者の氏名・資格名、保険証の事業所名、実務経験年数
+- 社会保険（健康保険・厚生年金・雇用保険）の加入状況
+- 作業員名簿なら：作成日／提出日／受入年月日の記入状況、安・現・主などの表示、雇用保険番号の記入状況、建退共の有無の記入状況、作業員数
+
+回答は次の形のJSON配列だけ（画像1枚につき1要素、画像の順番どおり）：
+[{"p":ページ番号,"type":"書類の種類","company":"このページの主な会社名（不明なら空文字）","text":"読み取った事項","unreadable":false}]`;
+}
+function judgePrompt(obj, slot, folder, rules, orderInfo){
+  const pageLines = obj.pages.map(p => `p${p.n}［${p.type || "不明"}］${p.company ? "会社:" + p.company + "／" : ""}${p.unreadable ? "（判読困難）" : ""}${(p.text || "").replace(/\s+/g," ")}`).join("\n");
+  const ruleLines = rules.filter(r => r.id !== "order").map(r => `${r.id}: ${r.t}${r.d ? "（" + r.d + "）" : ""}`).join("\n");
+  const slotLine = slot
+    ? `会社名:${slot.name}／次数:${TIERS[slot.tier].short}／契約相手:${slot.parent || "記載なし"}／担当工事:${slot.work || "記載なし"}／工期:${slot.kouki || "記載なし"}／主任技術者:${slot.shunin || "記載なし"}`
+    : "（この業者は体系図に載っていません）";
+  const info = folder && folder.info ? folder.info : {};
+  return `あなたは福岡市の公共建築工事の施工体制台帳を点検する担当者です。
+以下は、ある業者（区分: ${TIERS[obj.tier].label}、ファイル名: ${obj.fileName}）の提出PDFを1ページずつ読み取った結果です。これだけを根拠に、点検項目を1つずつ判定してください。
+
+判定は次の4つ：
+- "ok"：書類があり、記載も確認できた
+- "ng"：書類がない、または記載漏れ・不整合が読み取れた
+- "warn"：判読できない・情報が足りないなど、人が原本で確認する必要がある
+- "na"：条件に当てはまらず対象外（例：注文書に数量内訳があるので見積書不要／約款の内容が⑦⑧に記載済み／許可を持たない2次以降の業者なので許可・主任技術者は対象外）
+書類があるかどうかは［ ］内の種類で判断し、内容は読み取り事項で判断してください。読み取り結果にないことを「ある」と推測しないでください。
+ページの並び順の自動チェック結果＝${orderInfo}
+
+## 施工体系図での記載（照合の基準）
+工事名:${info.koujimei || "不明"}／元請:${info.motouke || "不明"}／全体工期:${info.kouki || "不明"}
+この業者:${slotLine}
+t_match は、提出書類の会社名・次数（注文者が誰か）・工期が上の体系図の記載と合っているかで判定。業者の工期が全体工期の範囲外なら ng。
+
+## 公式ルール（福岡市）
+${OFFICIAL}
+
+## 社内チェック項目
+${INHOUSE}
+
+## 点検項目（id: 内容）
+${ruleLines}
+
+## 読み取り結果
+${pageLines}
+
+回答は次の形のJSONだけ：
+{"company":"この業者の会社名","summary":"全体の所見（60字以内、不足を優先）","items":[{"id":"項目id","status":"ok|ng|warn|na","note":"根拠や不足点（40字以内）","pages":[関係するページ番号]}]}
+点検項目のすべてのidについて1つずつ返してください。`;
+}
+function checkOrder(pages){
+  let last = 0, bad = null;
+  for (const p of pages){
+    const r = ORDER_RANK[p.type]; if (!r) continue;
+    if (r < last && !bad) bad = p;
+    last = Math.max(last, r);
+  }
+  return bad ? {status:"warn", note:`p${bad.n}（${bad.type}）が提出順より後ろにあります`, pages:[bad.n]} : {status:"ok", note:"", pages:[]};
+}
+function manualResults(tier){ const r = {}; for (const x of rulesFor(tier)) r[x.id] = {status:"todo", note:"", pages:[]}; return r; }
+function folderById(fid){ return folders.find(f => f.id === fid); }
+function slotOf(folder, key){ return folder && key ? (folder.slots || []).find(s => s.key === key) : null; }
+function matchSlotByName(folder, text){
+  if (!folder) return null;
+  const n = norm(text);
+  return (folder.slots || []).find(s => norm(s.name).length >= 2 && n.includes(norm(s.name))) || null;
+}
+
+async function processVendor(w, mode){
+  const {fid, vid} = w;
+  const obj = w.obj;
+  w.error = "";
+  try {
+    if (mode === "full"){
+      if (!imgCache[vid] && w.file){
+        w.phase = "render"; w.progress = {done:0,total:0}; render();
+        const {pages, numPages} = await pdfToPages(w.file, 80, (i,t) => { w.progress = {done:i,total:t}; render(); }, 1.25);
+        imgCache[vid] = {};
+        pages.forEach(p => { imgCache[vid][p.n] = {url:p.url, blob:p.blob}; p.canvas = null; });
+        obj.pages = pages.map(p => ({n:p.n, type:"", company:"", text:"", unreadable:false}));
+        if (numPages > 80) w.error = `ページ数が多いため先頭80ページだけを読み込みました（全${numPages}ページ）。`;
+      } else {
+        obj.pages.forEach(p => { p.type = ""; });
+      }
+    }
+    if (!hasKey()){ obj.results = manualResults(obj.tier); notes.ai = errText({code:"no_key"}); await saveVendor(w); return; }
+    const todo = obj.pages.filter(p => !p.type);
+    if (todo.length){
+      w.phase = "read"; w.progress = {done: obj.pages.length - todo.length, total: obj.pages.length}; render();
+      for (let i = 0; i < todo.length; i += VENDOR_BATCH){
+        const batch = todo.slice(i, i + VENDOR_BATCH);
+        const blobs = await Promise.all(batch.map(p => blobFor(vid, p.n, p.img)));
+        if (blobs.some(b => !b)) throw new Error("ページ画像がありません。PDFを入れ直してください。");
+        const res = await askJson(readPrompt(obj, batch.map(p => p.n)), blobs);
+        const arr = Array.isArray(res) ? res : (res && Array.isArray(res.pages) ? res.pages : []);
+        batch.forEach((p,k) => {
+          const hit = arr.find(a => Number(a && a.p) === p.n) || arr[k] || {};
+          p.type = DOC_TYPES.includes(String(hit.type)) ? String(hit.type) : (hit.type ? "その他" : "判読不可");
+          p.text = String(hit.text || "").slice(0,600);
+          p.company = String(hit.company || "").slice(0,60);
+          p.unreadable = !!hit.unreadable;
+        });
+        w.progress.done += batch.length; render();
+      }
+    }
+    const folder = folderById(fid);
+    if (!obj.slot){
+      const comp = obj.pages.map(p => p.company).filter(Boolean);
+      const hit = (folder && folder.slots || []).find(sl => comp.some(c => sameCompany(c, sl.name)));
+      if (hit){ obj.slot = hit.key; obj.tier = hit.tier; }
+    }
+    w.phase = "judge"; render();
+    const rules = rulesFor(obj.tier);
+    const ord = checkOrder(obj.pages);
+    const slot = slotOf(folder, obj.slot);
+    const res = await askJson(judgePrompt(obj, slot, folder, rules, ord.status === "ok" ? "問題なし" : ord.note));
+    const items = res && Array.isArray(res.items) ? res.items : [];
+    obj.results = {};
+    for (const r of rules){
+      if (r.id === "order"){ obj.results.order = ord; continue; }
+      const it = items.find(x => x && x.id === r.id);
+      const st = it && STATUS[it.status] && it.status !== "todo" ? it.status : "warn";
+      obj.results[r.id] = {status:st, note: it ? String(it.note || "").slice(0,120) : "AIの判定が返らなかったため要確認", pages: it && Array.isArray(it.pages) ? it.pages.map(Number).filter(n => n > 0 && n <= obj.pages.length).slice(0,8) : []};
+    }
+    if (!slot) obj.results.t_match = {status:"ng", note:"体系図に載っていない業者です", pages:[]};
+    if (res && res.company) obj.name = String(res.company).slice(0,60);
+    obj.summary = res && res.summary ? String(res.summary).slice(0,200) : "";
+    await saveVendor(w);
+  } catch(e){
+    w.phase = "error";
+    w.error = e && e.name && /Quota|Transaction|Abort/.test(e.name) ? dbErrText(e) : errText(e);
+    if (!obj.results || !Object.keys(obj.results).length) obj.results = manualResults(obj.tier);
+    render();
+  }
+}
+async function saveVendor(w){
+  const {fid, vid, obj} = w;
+  if (obj.pages.some(p => !p.img) && imgCache[vid]){
+    w.phase = "upload"; w.progress = {done:0, total:obj.pages.length}; render();
+    const ok = await uploadPages(vid, obj.pages, () => { w.progress.done++; render(); });
+    if (!ok) w.error = "一部のページ画像を保存できませんでした（判定結果は保存されます）。";
+  }
+  obj.updatedAt = Date.now();
+  await store.setVendor(fid, vid, clone(obj));
+  if (obj.slot){
+    const old = [];
+    for (const d of Object.values(fid === currentFid ? vendorDocs : {})){
+      if (d.id !== vid && d.slot === obj.slot){ old.push(...(d.pages || []).map(p => p.img)); await store.delVendor(fid, d.id).catch(() => {}); }
+    }
+    const keep = new Set(obj.pages.map(p => p.img));
+    gcAssets(old.filter(id => !keep.has(id)));
+  }
+  delete work[vid];
+  if (fid === currentFid) selectedVid = vid;
+  render();
+  refreshStats(fid);
+}
+function enqueue(w, mode){
+  work[w.vid] = w; w.phase = "queued"; render();
+  queue = queue.then(() => processVendor(w, mode));
+}
+function addVendorFiles(list, forcedSlot){
+  const fid = currentFid; const folder = folderById(fid);
+  if (!folder) return;
+  const files = [...list].filter(f => /\.pdf$/i.test(f.name) || f.type === "application/pdf");
+  for (const f of files){
+    const slot = forcedSlot ? slotOf(folder, forcedSlot) : matchSlotByName(folder, f.name);
+    const vid = newId("v");
+    enqueue({fid, vid, file:f, phase:"queued", progress:{done:0,total:0}, error:"",
+      obj:{slot: slot ? slot.key : "", fileName:f.name, name: slot ? slot.name : "", tier: slot ? slot.tier : guessTier(f.name), pages:[], results:{}, summary:""}}, "full");
+    selectedVid = vid;
+  }
+}
+
+/* ---------- 集計 ---------- */
+function counts(results){
+  const c = {ok:0, ng:0, warn:0, na:0, todo:0};
+  for (const r of Object.values(results || {})) c[r.status] = (c[r.status] || 0) + 1;
+  return c;
+}
+function currentVendors(){
+  const m = {};
+  for (const [id,d] of Object.entries(vendorDocs)) m[id] = {id, doc:d, w:null};
+  for (const [id,w] of Object.entries(work)) if (w.fid === currentFid) m[id] = {id, doc:w.obj, w};
+  return Object.values(m);
+}
+function refreshStats(fid){
+  if (fid !== currentFid) return;
+  const f = folderById(fid); if (!f) return;
+  const vs = currentVendors().filter(v => !v.w);
+  let ng = 0, warn = 0;
+  vs.forEach(v => { const c = counts(v.doc.results); ng += c.ng; warn += c.warn + c.todo; });
+  const missing = (f.slots || []).filter(s => !vs.some(v => v.doc.slot === s.key)).length;
+  const stats = {total:(f.slots || []).length, missing, ng, warn, extra: vs.filter(v => !v.doc.slot).length};
+  const old = f.stats || {};
+  if (["total","missing","ng","warn","extra"].some(k => old[k] !== stats[k])) store.updFolder(fid, {stats}).catch(() => {});
+}
+
+/* ================= 画面 ================= */
+async function selectFolder(fid, quiet){
+  if (currentFid === fid) return;
+  if (currentFid) selByFolder[currentFid] = selectedVid;
+  currentFid = fid; selectedVid = selByFolder[fid] || null; confirmDel = null;
+  lsSet("sekou.folder", fid);
+  if (hashFid() !== fid){ try { history[quiet ? "replaceState" : "pushState"](null, "", "#f-" + fid); } catch(e){ location.hash = "f-" + fid; } }
+  if (!quiet) window.scrollTo({top:0});
+  render();
+  try { await store.watchVendors(fid); } catch(e){ notes.db = dbErrText(e); }
+  render();
+}
+
+function openViewer(cacheId, n, caption, imgId){
+  const src = pageSrc(cacheId, n, imgId);
+  const img = document.getElementById("viewerImg");
+  if (src){ img.src = src; img.hidden = false; img.alt = `${n}ページ目`; } else { img.hidden = true; }
+  document.getElementById("viewerCap").textContent = caption + (src ? "" : "\n（このページの画像は保存されていません）");
+  document.getElementById("viewer").hidden = false;
+  document.getElementById("viewerClose").focus();
+}
+
+function renderBanners(){
+  const b = document.getElementById("banners");
+  const list = [notes.db, notes.ai].filter(Boolean);
+  if (!hasKey()) list.unshift("AIによる読み取りには Anthropic のAPIキーが必要です。右上の「AI設定」から保存してください（キーがなくても、ページ画像を見ながら手動でチェックできます）。");
+  b.replaceChildren(...list.map(t => h("div",{class:"banner", text:t})));
+}
+
+function renderSide(){
+  const list = document.getElementById("flist");
+  list.replaceChildren();
+  if (taikeiWork){
+    list.append(h("div",{class:"fbtn busy"}, h("span",{class:"spine"}),
+      h("span",{}, h("div",{class:"ft", text:taikeiWork.fileName}),
+        h("div",{class:"fs", style: taikeiWork.phase === "error" ? "color:var(--ng)" : null, text: taikeiWork.phase === "error" ? taikeiWork.error : taikeiWork.text + "…"}),
+        taikeiWork.phase === "error" ? h("button",{class:"btn small", type:"button", style:"margin-top:6px", onclick:()=>{ taikeiWork = null; render(); }, text:"閉じる"}) : null)));
+  }
+  if (!foldersLoaded){ list.append(h("div",{class:"small muted", text:"フォルダを読み込み中…"})); return; }
+  if (!folders.length && !taikeiWork){ list.append(h("div",{class:"small muted", text:"まだフォルダがありません。"})); }
+  folders.forEach((f, i) => {
+    const st = f.stats || {};
+    const latest = i === folders.length - 1;
+    list.append(h("button",{class:"fbtn", type:"button", "aria-current": String(f.id === currentFid), onclick:()=>selectFolder(f.id)},
+      h("span",{class:"spine"}),
+      h("span",{},
+        h("div",{class:"fno"}, `${i + 1}フォルダ目`, latest ? h("span",{class:"latest", text:"最新"}) : null),
+        h("div",{class:"ft", text:f.title || f.fileName}),
+        h("div",{class:"fs"}, `業者${st.total ?? (f.slots||[]).length}社　`,
+          st.missing ? h("b",{class:"n", text:`未提出${st.missing}`}) : "全社提出",
+          st.ng ? h("span",{}, "　", h("b",{class:"n", text:`×${st.ng}`})) : null,
+          st.warn ? h("span",{}, "　", h("b",{class:"w", text:`△${st.warn}`})) : null))));
+  });
+}
+
+function rowVerdict(v, missing){
+  if (missing) return h("span",{class:"verdict miss", text:"未提出"});
+  if (v.w && v.w.phase !== "error") return h("span",{class:"verdict busy", text: v.w.phase === "queued" ? "順番待ち" : "読み取り中"});
+  const c = counts(v.doc.results);
+  if (c.ng) return h("span",{class:"verdict bad", text:"不足あり"});
+  if (c.warn || c.todo) return h("span",{class:"verdict mid", text:"要確認"});
+  return h("span",{class:"verdict good", text:"漏れなし"});
+}
+
+function renderMain(){
+  const main = document.getElementById("main");
+  main.replaceChildren();
+  const f = folderById(currentFid);
+  if (!f){
+    main.append(h("div",{class:"empty"},
+      h("h2",{text: foldersLoaded ? "最初の施工体系図を入れてください" : "読み込み中…"}),
+      h("ol",{},
+        h("li",{text:"右上の「AI設定」で Anthropic のAPIキーを保存します（初回だけ）。"}),
+        h("li",{text:"左の「＋ 施工体系図を入れる」に、体系図だけのPDFを入れます。AIが業者の一覧（次数・契約相手・担当工事）を読み取り、1つのフォルダになります。"}),
+        h("li",{text:"フォルダに業者ごとのPDFを入れます。ファイル名か書類の会社名から、体系図のどの業者かを自動で割り当てます。"}),
+        h("li",{text:"業者一覧で、未提出の業者と ×・△ の数が一目で分かります。行を選ぶと項目ごとの判定が見られます。"}),
+        h("li",{text:"下請が増えて体系図が新しくなったら、新しい体系図を入れて別のフォルダにします。前のフォルダの結果は引き継げます。"}))));
+    return;
+  }
+
+  const info = f.info || {};
+  const delBtn = h("button",{class:"btn danger small", type:"button", onclick:async()=>{
+      if (confirmDel !== "folder:"+f.id){ confirmDel = "folder:"+f.id; render(); setTimeout(()=>{ if (confirmDel === "folder:"+f.id){ confirmDel = null; render(); } }, 5000); return; }
+      confirmDel = null;
+      try {
+        const imgs = Object.values(f.pageImgs || {});
+        (await store.listVendors(f.id)).forEach(v => (v.pages || []).forEach(p => imgs.push(p.img)));
+        await store.delFolder(f.id);
+        currentFid = null; vendorDocs = {};
+        const rest = folders.filter(x => x.id !== f.id);
+        if (rest.length) await selectFolder(rest[rest.length - 1].id); else { try { history.replaceState(null, "", location.pathname); } catch(e){} }
+        render();
+        gcAssets(imgs, f.id);
+      } catch(e){ notes.db = dbErrText(e); render(); }
+    }, text: confirmDel === "folder:"+f.id ? "もう一度押すと削除" : "フォルダを削除"});
+  const idx = folders.findIndex(x => x.id === f.id);
+  const prevF = idx > 0 ? folders[idx - 1] : null;
+  const nextF = idx >= 0 && idx < folders.length - 1 ? folders[idx + 1] : null;
+  const carryBtn = prevF ? h("button",{class:"btn small", type:"button", onclick:(e)=>carryOver(f, prevF, e.currentTarget), text:`${idx}フォルダ目から結果を引き継ぐ`}) : null;
+  const prevNames = prevF ? (prevF.slots || []).map(s => s.name) : null;
+
+  main.append(h("div",{class:"fnav"},
+    h("button",{class:"btn small", type:"button", disabled: !prevF || null, onclick:()=>prevF && selectFolder(prevF.id), text:"← 前のフォルダ"}),
+    h("span",{class:"fno big", text:`${idx + 1}フォルダ目 ／ 全${folders.length}`}),
+    h("button",{class:"btn small", type:"button", disabled: !nextF || null, onclick:()=>nextF && selectFolder(nextF.id), text:"次のフォルダ →"})));
+
+  const tchecks = h("div",{class:"checks"}, h("div",{class:"group", text:"体系図の記載"}),
+    TAIKEI_CHECKS.map(c => {
+      const r = (f.checks || {})[c.id] || {status:"todo", note:""};
+      return h("div",{class:`row s-${r.status}`},
+        h("button",{class:`st ${r.status}`, type:"button", title:`${STATUS[r.status].label}（クリックで切替）`, "aria-label":`${c.t}：${STATUS[r.status].label}`,
+          onclick:()=>{ const i = CYCLE.indexOf(r.status); store.updFolder(f.id, {checks:{[c.id]:{status:CYCLE[(i+1)%CYCLE.length], note:r.note || "", manual:true}}}).catch(e => { notes.db = dbErrText(e); render(); }); }}, STATUS[r.status].sym),
+        h("div",{style:"min-width:0"}, h("div",{class:"t"}, c.t, r.manual ? h("span",{class:"manual", text:"手動"}) : null), r.note ? h("div",{class:"note", text:r.note}) : null));
+    }));
+  const tnums = [...new Set([...Object.keys(imgCache[f.id] || {}), ...Object.keys(f.pageImgs || {})])].map(Number).sort((a,b) => a - b);
+  const thumbs = tnums.length ? h("div",{class:"thumbs"}, tnums.map(n => {
+    const img = (f.pageImgs || {})[n]; const src = pageSrc(f.id, n, img);
+    return h("button",{type:"button", onclick:()=>openViewer(f.id, n, `施工体系図 p${n}`, img)}, src ? h("img",{src, alt:`体系図 ${n}ページ目`}) : `p${n}`);
+  })) : null;
+
+  main.append(h("section",{class:"panel"},
+    h("div",{class:"phead"},
+      h("div",{style:"min-width:0"},
+        h("h2",{text:f.title || f.fileName}),
+        h("dl",{class:"meta"},
+          h("dt",{text:"工事名"}), h("dd",{text:info.koujimei || "—"}),
+          h("dt",{text:"元請"}), h("dd",{text:info.motouke || "—"}),
+          h("dt",{text:"工期"}), h("dd",{text:info.kouki || "—"}),
+          h("dt",{text:"ファイル"}), h("dd",{text:`${f.fileName}（取込 ${fmtDate(f.createdAt)}）`}))),
+      h("div",{class:"acts"}, carryBtn, delBtn)),
+    h("div",{class:"taikei-body"}, tchecks, thumbs)));
+
+  const drop = h("div",{class:"drop", role:"button", tabindex:"0",
+    onclick:()=>{ pendingSlot = null; vendorIn.click(); },
+    onkeydown:(e)=>{ if (e.key === "Enter" || e.key === " "){ e.preventDefault(); pendingSlot = null; vendorIn.click(); } },
+    ondragover:(e)=>{ e.preventDefault(); drop.classList.add("over"); },
+    ondragleave:()=>drop.classList.remove("over"),
+    ondrop:(e)=>{ e.preventDefault(); drop.classList.remove("over"); addVendorFiles(e.dataTransfer.files); }},
+    h("div",{}, h("strong",{text:"この体系図の業者PDFをドロップ、またはクリックして選択"}),
+      h("p",{class:"muted small", text:"1業者＝1ファイル。複数まとめて入れられます。ファイル名に会社名が入っていれば、体系図の業者に自動で割り当てます。特定の業者に入れるときは、一覧の行の「PDFを入れる」を使ってください。"})),
+    h("span",{class:"btn primary", text:"PDFを選ぶ"}));
+  main.append(drop);
+
+  const vs = currentVendors();
+  const bySlot = {}; vs.forEach(v => { if (v.doc.slot) (bySlot[v.doc.slot] = bySlot[v.doc.slot] || []).push(v); });
+  const pickFor = key => (bySlot[key] || []).sort((a,b) => (b.w ? 1 : 0) - (a.w ? 1 : 0) || (b.doc.updatedAt || 0) - (a.doc.updatedAt || 0))[0];
+  const extras = vs.filter(v => !v.doc.slot);
+  const tb = h("tbody");
+  const numCells = (c) => ["ng","warn","ok"].map(k => { const n = k === "warn" ? c.warn + c.todo : c[k]; return h("td",{class:`num ${k}${n ? "" : " zero"}`, text:String(n)}); });
+  for (const s of (f.slots || [])){
+    const v = pickFor(s.key);
+    const t = TIERS[s.tier];
+    const missing = !v;
+    const c = v ? counts(v.doc.results) : {ng:0,warn:0,ok:0,todo:0};
+    tb.append(h("tr",{class:`vrow${missing ? " missing" : ""}`, "aria-selected": String(!!v && v.id === selectedVid), tabindex:"0",
+        onclick:(e)=>{ if (e.target.closest("button")) return; if (v){ selectedVid = v.id; render(); document.getElementById("detail")?.scrollIntoView({behavior:"smooth", block:"start"}); } },
+        onkeydown:(e)=>{ if (e.key === "Enter" && v){ selectedVid = v.id; render(); } }},
+      h("td",{}, h("span",{class:`tag ${t.cls}`, text:t.short})),
+      h("td",{class:"vname"}, h("span",{class:"ind", text: s.tier === "s1" ? "" : s.tier === "s2" ? "└ " : "　└ "}), s.name,
+        v && v.doc.copiedFrom ? h("span",{class:"copied", text:"引継ぎ"}) : null,
+        prevNames && !prevNames.some(n => sameCompany(n, s.name)) ? h("span",{class:"newbadge", text:"新規"}) : null),
+      h("td",{class:"cell-sub", text:s.work || "—"}),
+      h("td",{class:"cell-sub", text:s.parent || "—"}),
+      ...(missing ? [h("td",{class:"num zero", text:"—"}), h("td",{class:"num zero", text:"—"}), h("td",{class:"num zero", text:"—"})] : numCells(c)),
+      h("td",{}, rowVerdict(v, missing)),
+      h("td",{}, h("button",{class:"btn small", type:"button", onclick:()=>{ pendingSlot = s.key; slotIn.click(); }, text: missing ? "PDFを入れる" : "入れ直す"}))));
+  }
+  if (extras.length){
+    tb.append(h("tr",{class:"sep"}, h("td",{colspan:"9", text:"体系図にない業者（割り当てを確認してください）"})));
+    for (const v of extras){
+      const c = counts(v.doc.results);
+      tb.append(h("tr",{class:"vrow", "aria-selected": String(v.id === selectedVid), tabindex:"0", onclick:()=>{ selectedVid = v.id; render(); }},
+        h("td",{}, h("span",{class:"tag tx", text:"未割当"})),
+        h("td",{class:"vname", text: v.doc.name || v.doc.fileName}),
+        h("td",{class:"cell-sub", text:v.doc.fileName}), h("td",{class:"cell-sub", text:"—"}),
+        ...numCells(c), h("td",{}, rowVerdict(v, false)), h("td",{})));
+    }
+  }
+  if (!(f.slots || []).length && !extras.length){
+    tb.append(h("tr",{}, h("td",{colspan:"9", class:"muted", text:"体系図から業者を読み取れませんでした。業者PDFを入れると「体系図にない業者」として並びます。"})));
+  }
+  const st = f.stats || {};
+  main.append(h("section",{class:"panel"},
+    h("div",{class:"phead"},
+      h("div",{}, h("h2",{text:"業者一覧"}), h("div",{class:"small muted", text:`体系図の業者 ${(f.slots||[]).length}社 ／ 未提出 ${st.missing ?? "—"}社`})),
+      h("div",{class:"acts"},
+        h("button",{class:"btn small", type:"button", "aria-pressed":String(onlyIssues), onclick:()=>{ onlyIssues = !onlyIssues; render(); }, text: onlyIssues ? "すべての項目を表示" : "詳細は×と△だけ表示"}),
+        h("button",{class:"btn small", type:"button", onclick:()=>saveCsv(f), text:"CSVで保存"}))),
+    h("div",{class:"tablebox"}, h("table",{},
+      h("thead",{}, h("tr",{}, ["区分","業者","担当工事","契約相手"].map(x => h("th",{text:x})), h("th",{style:"text-align:center",text:"×"}), h("th",{style:"text-align:center",text:"△"}), h("th",{style:"text-align:center",text:"○"}), h("th",{text:"判定"}), h("th",{text:""}))),
+      tb))));
+
+  let sel = vs.find(v => v.id === selectedVid);
+  if (!sel){
+    sel = vs.filter(v => v.w).slice(-1)[0] || vs.find(v => counts(v.doc.results).ng) || null;
+    if (sel) selectedVid = sel.id;
+  }
+  if (sel) main.append(renderCard(sel, f));
+}
+
+function renderCard(v, f){
+  const d = v.doc, w = v.w;
+  const busy = !!w && w.phase !== "error";
+  const slot = slotOf(f, d.slot);
+  const tier = slot ? slot.tier : d.tier;
+  const t = slot ? TIERS[tier] : {short:"未割当", cls:"tx"};
+  const rules = rulesFor(tier);
+  const c = counts(d.results);
+
+  const assign = !busy ? h("select",{"aria-label":"体系図の業者に割り当て", onchange:async(e)=>{
+      const key = e.target.value; const sl = slotOf(f, key);
+      const patch = {slot:key, tier: sl ? sl.tier : d.tier};
+      try { await store.updVendor(f.id, v.id, patch); rejudge(v, f, patch); } catch(err){ notes.db = dbErrText(err); render(); }
+    }},
+    h("option",{value:"", text:"（体系図の業者に割り当て…）"}),
+    (f.slots || []).map(s => { const o = h("option",{value:s.key, text:`${TIERS[s.tier].short}　${s.name}`}); if (s.key === d.slot) o.selected = true; return o; })) : null;
+  const tierSel = !busy && !slot ? h("select",{"aria-label":"区分", onchange:async(e)=>{
+      try { await store.updVendor(f.id, v.id, {tier:e.target.value}); rejudge(v, f, {tier:e.target.value}); } catch(err){ notes.db = dbErrText(err); render(); }
+    }}, Object.entries(TIERS).map(([k,x]) => { const o = h("option",{value:k, text:x.label}); if (k === d.tier) o.selected = true; return o; })) : null;
+
+  const head = h("div",{class:"card-head"},
+    h("div",{class:"name"},
+      h("h2",{text: d.name || (slot && slot.name) || d.fileName}),
+      h("div",{class:"muted small"}, d.fileName, d.pages && d.pages.length ? `　${d.pages.length}ページ` : "", slot && slot.work ? `　担当：${slot.work}` : "", d.copiedFrom ? `　（${d.copiedFrom}から引継ぎ）` : "")),
+    h("div",{class:"acts"},
+      h("span",{class:"small", style:"font-family:var(--f-mono)"},
+        h("span",{style:"color:var(--ng)", text:`×${c.ng}`}), "　", h("span",{style:"color:var(--warn)", text:`△${c.warn + c.todo}`}), "　", h("span",{style:"color:var(--ok)", text:`○${c.ok}`})),
+      assign, tierSel,
+      !busy ? h("button",{class:"btn small", type:"button", onclick:()=>rejudge(v, f, {}, true), text: hasImages(v) ? "再チェック" : "再判定"}) : null,
+      !busy ? h("button",{class:"btn danger small", type:"button", onclick:async()=>{
+          if (confirmDel !== "v:"+v.id){ confirmDel = "v:"+v.id; render(); setTimeout(()=>{ if (confirmDel === "v:"+v.id){ confirmDel = null; render(); } }, 5000); return; }
+          confirmDel = null;
+          try {
+            if (work[v.id]) delete work[v.id];
+            else { const imgs = (d.pages || []).map(p => p.img); await store.delVendor(f.id, v.id); gcAssets(imgs); }
+            selectedVid = null; render(); refreshStats(f.id);
+          } catch(err){ notes.db = dbErrText(err); render(); }
+        }, text: confirmDel === "v:"+v.id ? "もう一度押すと削除" : "削除"}) : null));
+
+  const card = h("article",{class:`card ${t.cls}`, id:"detail"}, h("div",{class:"index", text:t.short}), head);
+  if (busy){
+    const label = {upload:`ページ画像を保存しています（${w.progress.done}/${w.progress.total}ページ）`, queued:"順番待ち", render:`PDFを画像にしています（${w.progress.done}/${w.progress.total || "?"}ページ）`, read:`AIがページを読み取り中（${w.progress.done}/${w.progress.total}ページ）`, judge:"体系図・ルールと照合中…"}[w.phase] || "";
+    const pct = w.progress && w.progress.total ? Math.round(w.progress.done / w.progress.total * 100) : (w.phase === "judge" ? 100 : 0);
+    card.append(h("div",{class:"prog", role:"status"}, h("span",{text:label}), h("span",{class:"bar"}, h("i",{style:`width:${pct}%`}))));
+  }
+  if (w && w.error) card.append(h("div",{class:"err", role:"alert", text:w.error}));
+  if (d.summary && !busy) card.append(h("div",{class:"aisum"}, h("b",{text:"所見　"}), d.summary));
+
+  const checks = h("div",{class:"checks"});
+  let group = "";
+  for (const r of rules){
+    const res = (d.results || {})[r.id];
+    if (r.g !== group){ group = r.g; checks.append(h("div",{class:"group", text:group})); }
+    const st = res ? res.status : "todo";
+    const btn = h("button",{class:`st ${st}`, type:"button", disabled: busy || null, title:`${STATUS[st].label}（クリックで切替）`, "aria-label":`${r.t}：${STATUS[st].label}`,
+      onclick:async()=>{
+        const i = CYCLE.indexOf(st);
+        const patch = {results:{[r.id]:{status:CYCLE[(i+1)%CYCLE.length], note:res ? res.note || "" : "", pages:res ? res.pages || [] : [], manual:true}}};
+        try { await store.updVendor(f.id, v.id, patch); render(); refreshStats(f.id); } catch(err){ notes.db = dbErrText(err); render(); }
+      }}, STATUS[st].sym);
+    const chips = res && res.pages && res.pages.length ? h("span",{class:"pchips"}, res.pages.map(n => h("button",{class:"pchip", type:"button", onclick:()=>pageView(v, n), text:"p"+n}))) : null;
+    const hide = onlyIssues && !["ng","warn","todo"].includes(st);
+    checks.append(h("div",{class:`row s-${st}${hide ? " hide" : ""}`}, btn,
+      h("div",{style:"min-width:0"},
+        h("div",{class:"t"}, r.t, res && res.manual ? h("span",{class:"manual", text:"手動"}) : null),
+        r.d ? h("div",{class:"d", text:r.d}) : null,
+        (res && res.note) || chips ? h("div",{class:"note"}, res && res.note ? res.note : "", chips) : null)));
+  }
+  const plist = h("div",{class:"plist"});
+  for (const p of (d.pages || [])){
+    const src = pageSrc(v.id, p.n, p.img);
+    plist.append(h("button",{class:`pg${p.unreadable || p.type === "判読不可" ? " flag" : ""}`, type:"button", onclick:()=>pageView(v, p.n)},
+      src ? h("img",{src, alt:`${p.n}ページ目`, loading:"lazy"}) : h("span",{class:"ph"}),
+      h("span",{class:"pn", text:"p"+p.n}), h("span",{class:"pt", text:p.type || "未読取"})));
+  }
+  card.append(h("div",{class:"card-body"}, checks,
+    h("aside",{class:"pages"}, h("h3",{text:"ページと書類の種類"}), (d.pages || []).length ? plist : h("p",{class:"muted small", text:"読み込み中…"}))));
+  return card;
+}
+function pageView(v, n){
+  const p = (v.doc.pages || []).find(x => x.n === n);
+  openViewer(v.id, n, `p${n}［${p ? p.type || "未判定" : ""}］` + (p && p.text ? "\n" + p.text : ""), p && p.img);
+}
+function hasImages(v){
+  const pages = v.doc.pages || [];
+  return pages.length > 0 && pages.every(p => (imgCache[v.id] && imgCache[v.id][p.n]) || p.img);
+}
+function rejudge(v, f, patch, reread){
+  const obj = Object.assign(clone(v.doc), patch || {});
+  delete obj.id; delete obj.fid;
+  const mode = reread && hasImages(v) ? "full" : "judge";
+  enqueue({fid:f.id, vid:v.id, file:null, phase:"queued", progress:{done:0,total:0}, error:"", obj}, mode);
+}
+
+async function carryOver(f, from, btn){
+  btn.disabled = true; btn.textContent = "引き継いでいます…";
+  try {
+    const old = await store.listVendors(from.id);
+    const fromSlots = from.slots || [];
+    const have = new Set(currentVendors().map(v => v.doc.slot).filter(Boolean));
+    let n = 0;
+    for (const s of (f.slots || [])){
+      if (have.has(s.key)) continue;
+      const hit = old.filter(o => {
+        const os = fromSlots.find(x => x.key === o.slot);
+        return sameCompany(os ? os.name : o.name, s.name) || sameCompany(o.name, s.name);
+      }).sort((a,b) => (b.updatedAt || 0) - (a.updatedAt || 0))[0];
+      if (!hit) continue;
+      const doc = clone(hit); delete doc.id; delete doc.fid;
+      doc.slot = s.key; doc.tier = s.tier; doc.copiedFrom = from.title || from.fileName; doc.updatedAt = Date.now();
+      await store.setVendor(f.id, newId("v"), doc); n++;
+    }
+    btn.textContent = n ? `${n}社を引き継ぎました` : "引き継げる業者はありませんでした";
+    render(); refreshStats(f.id);
+  } catch(e){ notes.db = dbErrText(e); render(); }
+}
+
+/* ---------- CSV ---------- */
+function saveCsv(f){
+  const q = s => `"${String(s ?? "").replace(/"/g,'""')}"`;
+  const rows = [["体系図フォルダ","区分","業者名","担当工事","契約相手","ファイル名","項目","判定","メモ","ページ","手動"].map(q).join(",")];
+  const vs = currentVendors().filter(v => !v.w);
+  for (const c of TAIKEI_CHECKS){ const r = (f.checks || {})[c.id] || {status:"todo"}; rows.push([f.title,"体系図","","","",f.fileName,c.t,STATUS[r.status].sym+" "+STATUS[r.status].label,r.note || "","",r.manual ? "手動" : ""].map(q).join(",")); }
+  for (const s of (f.slots || [])){
+    const v = vs.filter(x => x.doc.slot === s.key).sort((a,b) => (b.doc.updatedAt||0)-(a.doc.updatedAt||0))[0];
+    if (!v){ rows.push([f.title, TIERS[s.tier].short, s.name, s.work, s.parent, "", "提出", "× 未提出", "", "", ""].map(q).join(",")); continue; }
+    for (const r of rulesFor(s.tier)){ const res = (v.doc.results || {})[r.id] || {status:"todo"}; rows.push([f.title, TIERS[s.tier].short, s.name, s.work, s.parent, v.doc.fileName, r.t, STATUS[res.status].sym+" "+STATUS[res.status].label, res.note || "", (res.pages||[]).map(n=>"p"+n).join(" "), res.manual ? "手動" : ""].map(q).join(",")); }
+  }
+  for (const v of vs.filter(x => !x.doc.slot)){
+    for (const r of rulesFor(v.doc.tier)){ const res = (v.doc.results || {})[r.id] || {status:"todo"}; rows.push([f.title, "未割当", v.doc.name, "", "", v.doc.fileName, r.t, STATUS[res.status].sym+" "+STATUS[res.status].label, res.note || "", (res.pages||[]).map(n=>"p"+n).join(" "), res.manual ? "手動" : ""].map(q).join(",")); }
+  }
+  const d = new Date();
+  const name = `施工体制台帳チェック_${(f.title || "").replace(/[\\/:*?"<>|\s]+/g,"_")}_${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}.csv`;
+  saveFile(name, new Blob(["﻿" + rows.join("\r\n")], {type:"text/csv"}));
+}
+
+/* ---------- バックアップ ---------- */
+async function backup(){
+  const msg = document.getElementById("backupMsg");
+  msg.textContent = "バックアップを作成しています…";
+  try {
+    const fs = await tx("folders", "readonly", t => t.objectStore("folders").getAll());
+    const vs = await tx("vendors", "readonly", t => t.objectStore("vendors").getAll());
+    const keys = await tx("images", "readonly", t => t.objectStore("images").getAllKeys());
+    const images = {};
+    for (const k of keys || []){ const b = await store.getImage(k); if (b) images[k] = await blobToB64(b); }
+    const d = new Date();
+    saveFile(`施工体制台帳チェッカー_バックアップ_${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}.json`,
+      new Blob([JSON.stringify({app:"sekou-checker", version:1, savedAt:Date.now(), folders:fs, vendors:vs, images})], {type:"application/json"}));
+    msg.textContent = `フォルダ${(fs||[]).length}件を保存しました。`;
+  } catch(e){ msg.textContent = dbErrText(e); }
+}
+async function restore(file){
+  const msg = document.getElementById("backupMsg");
+  msg.textContent = "バックアップを読み込んでいます…";
+  try {
+    const data = JSON.parse(await file.text());
+    if (!data || data.app !== "sekou-checker") throw new Error("このアプリのバックアップファイルではありません");
+    for (const [k, b64] of Object.entries(data.images || {})){
+      const bin = atob(b64); const u = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+      await tx("images", "readwrite", t => t.objectStore("images").put(new Blob([u], {type:"image/jpeg"}), k));
+    }
+    for (const f of data.folders || []) await tx("folders", "readwrite", t => t.objectStore("folders").put(f));
+    for (const v of data.vendors || []) await tx("vendors", "readwrite", t => t.objectStore("vendors").put(v));
+    msg.textContent = `フォルダ${(data.folders||[]).length}件を戻しました（同じフォルダは上書き）。`;
+    const keep = currentFid; currentFid = null;
+    await store.init();
+    if (keep && folderById(keep)) await selectFolder(keep, true);
+  } catch(e){ msg.textContent = "戻せませんでした：" + (e && e.message || e); }
+}
+
+function render(){ renderBanners(); renderSide(); renderMain(); }
+
+/* ---------- 入力 ---------- */
+const nf = document.getElementById("newFolder");
+const taikeiIn = document.getElementById("taikeiIn");
+const vendorIn = document.getElementById("vendorIn");
+const slotIn = document.getElementById("slotIn");
+function takeTaikei(files){
+  const f = [...files].find(x => /\.pdf$/i.test(x.name) || x.type === "application/pdf");
+  if (!f || (taikeiWork && taikeiWork.phase !== "error")) return;
+  createFolder(f);
+}
+taikeiIn.addEventListener("change", e => { takeTaikei(e.target.files); e.target.value = ""; });
+nf.addEventListener("dragover", e => { e.preventDefault(); nf.classList.add("over"); });
+nf.addEventListener("dragleave", () => nf.classList.remove("over"));
+nf.addEventListener("drop", e => { e.preventDefault(); nf.classList.remove("over"); takeTaikei(e.dataTransfer.files); });
+vendorIn.addEventListener("change", e => { addVendorFiles(e.target.files); e.target.value = ""; });
+slotIn.addEventListener("change", e => { if (pendingSlot) addVendorFiles(e.target.files, pendingSlot); pendingSlot = null; e.target.value = ""; });
+window.addEventListener("popstate", () => { const id = hashFid(); if (id && id !== currentFid && folderById(id)) selectFolder(id, true); });
+window.addEventListener("hashchange", () => { const id = hashFid(); if (id && id !== currentFid && folderById(id)) selectFolder(id, true); });
+
+const viewer = document.getElementById("viewer");
+document.getElementById("viewerClose").addEventListener("click", () => { viewer.hidden = true; });
+viewer.addEventListener("click", e => { if (e.target === viewer) viewer.hidden = true; });
+document.addEventListener("keydown", e => { if (e.key === "Escape") viewer.hidden = true; });
+
+document.getElementById("backupBtn").addEventListener("click", backup);
+document.getElementById("restoreBtn").addEventListener("click", () => document.getElementById("restoreIn").click());
+document.getElementById("restoreIn").addEventListener("change", e => { const f = e.target.files[0]; if (f) restore(f); e.target.value = ""; });
+
+/* AI設定 */
+const settings = document.getElementById("settings");
+const keyIn = document.getElementById("keyIn");
+function renderKeyState(){
+  const s = document.getElementById("keyState");
+  s.className = "keystate " + (hasKey() ? "on" : "off");
+  s.textContent = hasKey() ? "保存済み" : "未設定";
+}
+document.getElementById("settingsBtn").addEventListener("click", () => { settings.hidden = !settings.hidden; if (!settings.hidden) keyIn.focus(); });
+document.getElementById("keySave").addEventListener("click", () => {
+  const v = keyIn.value.trim();
+  if (!v) return;
+  lsSet("sekou.apikey", v); keyIn.value = ""; notes.ai = ""; client = null;
+  renderKeyState(); render();
+});
+document.getElementById("keyClear").addEventListener("click", () => { lsDel("sekou.apikey"); client = null; renderKeyState(); render(); });
+if (!hasKey()) settings.hidden = false;
+renderKeyState();
+
+render();
+store.init();
+</script>
+</body>
+</html>
