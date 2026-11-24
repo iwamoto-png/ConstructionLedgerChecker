@@ -84,6 +84,10 @@ header.top p{margin:4px 0 0;max-width:64ch}
 .phead .meta{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 12px;font-size:.88rem;margin:6px 0 0}
 .phead .meta dt{color:var(--muted)} .phead .meta dd{margin:0;overflow-wrap:anywhere}
 .acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.titlerow{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
+.titlerow h2{overflow-wrap:anywhere;min-width:0}
+.rename{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.rename input{flex:1;min-width:0;max-width:420px;border:1px solid var(--accent);background:var(--surface);border-radius:6px;padding:5px 10px;font-size:1.05rem;font-weight:700}
 .taikei-body{display:grid;grid-template-columns:minmax(0,1fr) auto}
 .thumbs{display:flex;gap:8px;padding:12px 16px;border-left:1px solid var(--line);background:var(--sunk);flex-wrap:wrap;align-content:flex-start;max-width:280px}
 .thumbs button{border:1px solid var(--line);padding:3px;background:var(--surface);border-radius:4px}
@@ -341,6 +345,7 @@ let notes = {db:"", ai:""};
 let queue = Promise.resolve();
 let confirmDel = null;
 let pendingSlot = null;
+let renaming = null, renameDraft = "";
 
 const pdfjs = window.pdfjsLib || window["pdfjs-dist/build/pdf"];
 if (pdfjs) { try { pdfjs.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"; } catch(e){} }
@@ -1027,10 +1032,28 @@ function renderMain(){
     return h("button",{type:"button", onclick:()=>openViewer(f.id, n, `施工体系図 p${n}`, img)}, src ? h("img",{src, alt:`体系図 ${n}ページ目`}) : `p${n}`);
   })) : null;
 
+  const defaultTitle = "体系図 " + ((f.info || {}).date || fmtDate(f.createdAt));
+  const commitRename = async () => {
+    const name = renameDraft.trim().slice(0, 60) || defaultTitle;
+    renaming = null;
+    try { await store.updFolder(f.id, {title:name}); } catch(e){ notes.db = dbErrText(e); }
+    render();
+  };
+  const titleEl = renaming === f.id
+    ? h("form",{class:"rename", onsubmit:(e)=>{ e.preventDefault(); commitRename(); }},
+        h("input",{type:"text", id:"renameIn", value:renameDraft, maxlength:"60", "aria-label":"フォルダ名", placeholder:defaultTitle,
+          oninput:(e)=>{ renameDraft = e.target.value; },
+          onkeydown:(e)=>{ if (e.key === "Escape"){ e.preventDefault(); renaming = null; render(); } }}),
+        h("button",{class:"btn primary small", type:"submit", text:"保存"}),
+        h("button",{class:"btn small", type:"button", onclick:()=>{ renaming = null; render(); }, text:"やめる"}))
+    : h("div",{class:"titlerow"},
+        h("h2",{text:f.title || f.fileName}),
+        h("button",{class:"btn small", type:"button", onclick:()=>{ renaming = f.id; renameDraft = f.title || ""; render(); const el = document.getElementById("renameIn"); if (el){ el.focus(); el.select(); } }, text:"名前を変更"}));
+
   main.append(h("section",{class:"panel"},
     h("div",{class:"phead"},
-      h("div",{style:"min-width:0"},
-        h("h2",{text:f.title || f.fileName}),
+      h("div",{style:"min-width:0;flex:1"},
+        titleEl,
         h("dl",{class:"meta"},
           h("dt",{text:"工事名"}), h("dd",{text:info.koujimei || "—"}),
           h("dt",{text:"元請"}), h("dd",{text:info.motouke || "—"}),
@@ -1279,7 +1302,12 @@ async function restore(file){
   } catch(e){ msg.textContent = "戻せませんでした：" + (e && e.message || e); }
 }
 
-function render(){ renderBanners(); renderSide(); renderMain(); }
+function render(){
+  const a = document.activeElement;
+  const keep = a && a.id === "renameIn" ? [a.selectionStart, a.selectionEnd] : null;
+  renderBanners(); renderSide(); renderMain();
+  if (keep){ const el = document.getElementById("renameIn"); if (el){ el.focus(); try { el.setSelectionRange(keep[0], keep[1]); } catch(e){} } }
+}
 
 /* ---------- 入力 ---------- */
 const nf = document.getElementById("newFolder");
