@@ -266,16 +266,17 @@ body{background:var(--bg)}
 .guide{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;justify-content:space-between}
 .steps{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
 .steps li{display:flex;gap:10px;align-items:center;background:var(--surface);border:2px solid var(--line);border-radius:999px;padding:6px 18px 6px 8px;box-shadow:var(--shadow)}
-.steps li b{flex:none;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:var(--surface);font-size:1rem}
+/* 手順の色：1=青、2=オレンジ、3=紫（上の手順と下の見出しで同じ色） */
+.c1{--sc:#1f63a8} .c2{--sc:#c8650f} .c3{--sc:#6a4ba0}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .c1{--sc:#5aa0e6} :root:not([data-theme="light"]) .c2{--sc:#f0954a} :root:not([data-theme="light"]) .c3{--sc:#a98be0}}
+.steps li b{flex:none;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--sc);color:#fff;font-size:1rem}
 .steps li span{display:flex;flex-direction:column;line-height:1.3;font-weight:700}
 .steps li small{font-weight:400;font-size:.85rem;color:var(--muted)}
-.steps li em{display:none;font-style:normal;font-size:.85rem;font-weight:700;color:var(--ok);border:2px solid var(--ok);border-radius:4px;padding:0 6px;line-height:1.5}
-.steps li.now{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,var(--surface))}
-.steps li.done em{display:inline-block}
+.steps li.now{border-color:var(--sc);background:color-mix(in srgb,var(--sc) 10%,var(--surface))}
 .legend{background:var(--surface);border:2px solid var(--line);border-radius:10px;padding:8px 14px;box-shadow:var(--shadow)}
 .legend-t{font-weight:700;color:var(--ink)}
 .sec{display:flex;align-items:center;gap:10px;font-size:1.2rem;color:var(--ink);letter-spacing:0}
-.sec b{flex:none;width:32px;height:32px;border-radius:50%;background:var(--accent);color:var(--surface);display:grid;place-items:center;font-size:1rem}
+.sec b{flex:none;width:32px;height:32px;border-radius:50%;background:var(--sc,var(--accent));color:#fff;display:grid;place-items:center;font-size:1rem}
 .side h2.sec{font-size:1.15rem;color:var(--ink)}
 .panel,.settings,.empty{border:0;box-shadow:var(--shadow);border-radius:12px}
 .panel .phead{border-bottom:2px solid var(--line)}
@@ -325,9 +326,9 @@ body{background:var(--bg)}
 <div class="wrap">
   <div class="guide">
     <ol class="steps" id="steps" aria-label="使い方の手順">
-      <li data-step="1"><b>1</b><span>体系図を入れる<small>左の「＋ 施工体系図を入れる」</small></span><em>済</em></li>
-      <li data-step="2"><b>2</b><span>業者のPDFを入れる<small>業者ごとに1ファイル</small></span><em>済</em></li>
-      <li data-step="3"><b>3</b><span>結果を確認する<small>×と△を原本で確認</small></span><em>済</em></li>
+      <li data-step="1" class="c1"><b>1</b><span>体系図を入れる<small>左の「＋ 施工体系図を入れる」</small></span></li>
+      <li data-step="2" class="c2"><b>2</b><span>業者のPDFを入れる<small>業者ごとに1ファイル</small></span></li>
+      <li data-step="3" class="c3"><b>3</b><span>結果を確認する<small>×と△を原本で確認</small></span></li>
     </ol>
     <div class="legend" aria-label="判定の見方">
       <span class="legend-t">判定の見方</span>
@@ -353,7 +354,7 @@ body{background:var(--bg)}
 
   <div class="layout">
     <aside class="side" aria-label="体系図フォルダ">
-      <h2 class="sec"><b>1</b>体系図フォルダ</h2>
+      <h2 class="sec c1"><b>1</b>体系図フォルダ</h2>
       <label class="newfolder" id="newFolder" for="taikeiIn">
         <strong>＋ 施工体系図を入れる</strong>
         <span class="small muted">体系図だけのPDFをドロップ／クリック。新しいフォルダができます。</span>
@@ -433,7 +434,7 @@ function rulesFor(tier){
     {id:"s_kouki", g:"契約・台帳", t:"工期が注文書・請書・台帳で一致"},
     {id:"s_date", g:"契約・台帳", t:"契約日（請書の発注日）など日付の記載漏れ・矛盾がない"},
     {id:"s_company", g:"契約・台帳", t:"会社名・住所・代表者が書類間で一致", d: first ? "" : "代表者名の記載がなければ代表者は確認不要"},
-    {id:"s_shukyu", g:"契約・台帳", t:"約款に週休2日の記載"},
+    {id:"s_shukyu", g:"契約・台帳", t:"約款に週休2日の記載", d:"「土曜・日曜は休み」「4週8休」など、同じ意味の書き方でもOK"},
     {id:"s_fukuri", g:"契約・台帳", t:"法定福利費の記載", d: first ? "約款に記載" : "約款、または内訳に記載があればOK"},
     {id:"s_utiwake", g:"契約・台帳", t:"内訳が具体的な数量で書かれている（「一式」のみはNG）"},
     {id:"s_inshi", g:"契約・台帳", t:"収入印紙の貼付"},
@@ -466,7 +467,7 @@ const OFFICIAL = `- 施工体制台帳・再下請負通知書・下請契約書
 - 再下請負通知書の「報告下請負業者」欄に「印」が無ければ押印は不要`;
 const INHOUSE = `- 1次（JVと契約）は施工体制台帳（下請負人に関する事項）、2次・3次は再下請負通知書（再下請負関係）で確認する
 - 注文書・注文請書：工期に間違いがないか。2次以降は契約日（請書発注日）、会社名・住所も確認（代表者名の記載がなければ代表者は確認不要）
-- 契約約款：週休2日・法定福利費の記載があるか（2次以降は内訳に記載があればOK）
+- 契約約款：週休2日・法定福利費の記載があるか（2次以降は内訳に記載があればOK）。週休2日は言葉そのものがなくても、「土曜日・日曜日は休みとする」「土日休工」「4週8休」など、毎週2日休む内容の文があれば ok。「日曜休み」だけ、「土曜は隔週」など週2日に足りない書き方は warn
 - 見積書：相手から発行されたものか（1次）
 - 基本契約書：契約日、会社名・住所・代表者に間違いがないか（1次）
 - 建設業の許可：有効期間年月日・番号の違いがないか。更新前の許可証があればその日からの記載でOK。2次以降は許可がない業者もあり、その場合は主任技術者も不要
@@ -856,7 +857,8 @@ text には、そのページで読み取れたことだけを日本語で簡潔
 - 日付（作成日・契約日・注文日・請書日・提出日・受入年月日）と工期（開始〜終了）。空欄の日付欄があれば「○○欄空欄」
 - 金額の記載の有無、黒塗りの有無、収入印紙の有無、押印の有無（「印」欄があるか）
 - 内訳が数量で書かれているか、「一式」だけか
-- 「週休2日」「法定福利費」の記載の有無
+- 休日の定め：「週休2日」の言葉がなくても、「土曜日・日曜日は休みとする」「土日祝は休工」「4週8休」など休日についての文があれば、その文をそのまま短く書き写す
+- 「法定福利費」の記載の有無（内訳の行にあればその旨）
 - 建設業許可の番号・業種・許可年月日（有効期間の始期・終期）
 - 主任技術者の氏名・資格名、保険証の事業所名、実務経験年数
 - 社会保険（健康保険・厚生年金・雇用保険）の加入状況
@@ -1218,7 +1220,7 @@ function renderMain(){
     ondragover:(e)=>{ e.preventDefault(); drop.classList.add("over"); },
     ondragleave:()=>drop.classList.remove("over"),
     ondrop:(e)=>{ e.preventDefault(); drop.classList.remove("over"); addVendorFiles(e.dataTransfer.files); }},
-    h("div",{}, h("strong",{class:"sec"}, h("b",{text:"2"}), "この体系図の業者PDFを入れる（ドロップ、またはクリック）"),
+    h("div",{}, h("strong",{class:"sec c2"}, h("b",{text:"2"}), "この体系図の業者PDFを入れる（ドロップ、またはクリック）"),
       h("p",{class:"muted small", text:"1業者＝1ファイル。複数まとめて入れられます。ファイル名に会社名が入っていれば、体系図の業者に自動で割り当てます。特定の業者に入れるときは、一覧の行の「PDFを入れる」を使ってください。"})),
     h("span",{class:"btn primary", text:"PDFを選ぶ"}));
   main.append(drop);
@@ -1265,7 +1267,7 @@ function renderMain(){
   const st = f.stats || {};
   main.append(h("section",{class:"panel"},
     h("div",{class:"phead"},
-      h("div",{}, h("h2",{class:"sec"}, h("b",{text:"3"}), "業者ごとのチェック結果"), h("div",{class:"small muted", text:`体系図の業者 ${(f.slots||[]).length}社 ／ 未提出 ${st.missing ?? "—"}社`})),
+      h("div",{}, h("h2",{class:"sec c3"}, h("b",{text:"3"}), "業者ごとのチェック結果"), h("div",{class:"small muted", text:`体系図の業者 ${(f.slots||[]).length}社 ／ 未提出 ${st.missing ?? "—"}社`})),
       h("div",{class:"acts"},
         h("button",{class:"btn small", type:"button", "aria-pressed":String(onlyIssues), onclick:()=>{ onlyIssues = !onlyIssues; render(); }, text: onlyIssues ? "すべての項目を表示" : "問題のある項目だけ表示"}),
         h("button",{class:"btn small", type:"button", onclick:()=>saveCsv(f), text:"CSVで保存"}))),
@@ -1467,7 +1469,8 @@ function renderSteps(){
   const now = !f ? 1 : !hasVendor ? 2 : 3;
   document.querySelectorAll("#steps li").forEach(li => {
     const n = Number(li.dataset.step);
-    li.className = n < now ? "done" : n === now ? "now" : "";
+    li.classList.toggle("done", n < now);
+    li.classList.toggle("now", n === now);
     if (n === now) li.setAttribute("aria-current", "step"); else li.removeAttribute("aria-current");
   });
 }
