@@ -98,10 +98,16 @@ header.top p{margin:4px 0 0;max-width:64ch}
 .dlg p{margin:0}
 .dlg p:empty{display:none}
 .tiersel{display:flex;flex-direction:column;gap:2px}
+/* 次数のプルダウンとボタンを同じ高さ・同じ下端にそろえる */
+.card-head .acts{align-items:flex-end}
+.card-head .acts select,.card-head .acts .btn{height:44px;min-height:44px;box-sizing:border-box}
+.card-head .acts .btn{display:inline-flex;align-items:center}
 .fileline{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin-top:4px}
-.tally{display:inline-flex;gap:6px}
-.tc{display:inline-flex;align-items:center;gap:4px;padding:2px 10px;border-radius:999px;border:2px solid var(--c);color:var(--c);background:color-mix(in srgb,var(--c) 10%,var(--surface));font-family:var(--f-mono);font-weight:700;font-size:1rem;line-height:1.4}
-.tc b{font-family:var(--f-body)}
+.tally{display:inline-flex;flex-wrap:wrap;gap:8px}
+.tc{display:inline-flex;align-items:center;gap:6px;padding:4px 14px 4px 10px;border-radius:10px;border:2px solid var(--c);color:var(--c);background:color-mix(in srgb,var(--c) 10%,var(--surface));font-weight:700;line-height:1.2}
+.tc b{font-size:1.4rem}
+.tc i{font-style:normal;font-size:.95rem}
+.tc em{font-style:normal;font-family:var(--f-mono);font-size:1.45rem;min-width:1.2em;text-align:right}
 .tc.ng{--c:var(--ng)} .tc.warn{--c:var(--warn)} .tc.ok{--c:var(--ok)}
 .tc.ng:not(.zero){background:var(--ng);color:var(--surface)}
 .tc.zero{--c:var(--na);opacity:.7}
@@ -1330,9 +1336,9 @@ function renderCard(v, f){
       h("div",{class:"fileline"},
         h("span",{class:"muted small"}, d.fileName, d.pages && d.pages.length ? `　${d.pages.length}ページ` : "", slot && slot.work ? `　担当：${slot.work}` : "", d.copiedFrom ? `　（${d.copiedFrom}から引継ぎ）` : ""),
         h("span",{class:"tally", "aria-label":`不足${c.ng}件、確認${c.warn + c.todo}件、OK${c.ok}件`},
-          h("span",{class:`tc ng${c.ng ? "" : " zero"}`}, h("b",{text:"×"}), String(c.ng)),
-          h("span",{class:`tc warn${c.warn + c.todo ? "" : " zero"}`}, h("b",{text:"△"}), String(c.warn + c.todo)),
-          h("span",{class:`tc ok${c.ok ? "" : " zero"}`}, h("b",{text:"○"}), String(c.ok))))),
+          h("span",{class:`tc ng${c.ng ? "" : " zero"}`}, h("b",{text:"×"}), h("i",{text:"不足"}), h("em",{text:String(c.ng)})),
+          h("span",{class:`tc warn${c.warn + c.todo ? "" : " zero"}`}, h("b",{text:"△"}), h("i",{text:"確認"}), h("em",{text:String(c.warn + c.todo)})),
+          h("span",{class:`tc ok${c.ok ? "" : " zero"}`}, h("b",{text:"○"}), h("i",{text:"OK"}), h("em",{text:String(c.ok)}))))),
     h("div",{class:"acts"},
       tierSel,
       !busy && !work[v.id] ? h("button",{class:"btn small", type:"button", onclick:()=>openRename({
