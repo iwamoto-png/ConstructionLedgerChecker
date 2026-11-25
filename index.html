@@ -86,6 +86,9 @@ header.top p{margin:4px 0 0;max-width:64ch}
 .acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .slotinfo{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 12px;margin:0;padding:10px 16px;border-bottom:1px solid var(--line);font-size:.86rem;background:color-mix(in srgb,var(--accent) 5%,var(--surface))}
 .slotinfo dt{color:var(--muted);white-space:nowrap} .slotinfo dd{margin:0;overflow-wrap:anywhere}
+.slotinfo dt{align-self:center}
+.parentdd{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
+.parentdd select{min-height:40px;font-size:.95rem;max-width:100%}
 /* フォルダ一覧：1件を1枚の札にし、開いているフォルダだけ札の中に「名前を変更」を出す */
 .fitem{border:2px solid var(--line);border-left:8px solid var(--line);border-radius:8px;background:var(--surface);overflow:hidden}
 .fitem.cur{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 6%,var(--surface))}
@@ -108,11 +111,17 @@ header.top p{margin:4px 0 0;max-width:64ch}
 .pgrep{min-height:34px !important;padding:2px 6px !important;font-size:.82rem !important;width:100%}
 .pg.repl{border-color:var(--accent);border-width:2px}
 .replbadge{margin-left:4px;font-size:.7rem;color:var(--surface);background:var(--accent);border-radius:3px;padding:0 4px;font-family:var(--f-body)}
+.suggest{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--warn) 12%,var(--surface));border-left:6px solid var(--warn)}
+.sugtext{font-weight:700;font-size:1rem;min-width:0;flex:1 1 320px}
+.sugbadge{font-size:.8rem;font-weight:700;color:var(--warn);border:2px solid var(--warn);border-radius:4px;padding:0 6px;margin-left:8px;white-space:nowrap}
 .replnote{padding:10px 20px;border-bottom:1px solid var(--line);font-size:.95rem;background:color-mix(in srgb,var(--accent) 8%,var(--surface));color:var(--ink)}
 .dlg{background:var(--surface);color:var(--ink);border-radius:12px;padding:24px;width:min(520px,100%);display:flex;flex-direction:column;gap:12px;box-shadow:0 12px 40px rgba(0,0,0,.35)}
 .dlg input{width:100%;min-height:52px;border:2px solid var(--accent);background:var(--surface);border-radius:8px;padding:8px 12px;font-size:1.15rem;font-weight:700}
 .dlg p{margin:0}
 .dlg p:empty{display:none}
+.choices{display:flex;flex-direction:column;gap:10px}
+.choices .btn{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:2px;min-height:54px;padding:10px 16px}
+.choices .btn small{font-weight:400;font-size:.9rem;opacity:.9}
 .tiersel{display:flex;flex-direction:column;gap:2px}
 /* 次数のプルダウンとボタンを同じ高さ・同じ下端にそろえる */
 .card-head .acts{align-items:flex-end}
@@ -156,7 +165,9 @@ tr.vrow[aria-selected="true"] td{background:color-mix(in srgb,var(--accent) 9%,v
 tr.missing td{background:color-mix(in srgb,var(--ng) 5%,var(--surface))}
 tr.sep td{font-size:.78rem;color:var(--muted);letter-spacing:.06em;background:var(--sunk);padding:5px 10px}
 .vname{font-weight:700;min-width:12em}
-.vname .ind{display:inline-block;color:var(--muted);font-family:var(--f-mono);font-weight:400}
+.vname .ind{display:inline-block;color:var(--muted);font-family:var(--f-mono);font-weight:400;margin-right:.6em}
+.vname .ind.l2{width:.8em}
+.vname .ind.l3{width:2.2em}
 .cell-sub{font-size:.82rem;color:var(--muted);min-width:8em}
 .verdict{display:inline-block;padding:1px 10px;border-radius:999px;font-size:.8rem;font-weight:700;white-space:nowrap}
 .verdict.bad{background:color-mix(in srgb,var(--ng) 14%,transparent);color:var(--ng)}
@@ -166,6 +177,12 @@ tr.sep td{font-size:.78rem;color:var(--muted);letter-spacing:.06em;background:va
 .verdict.busy{background:var(--sunk);color:var(--muted)}
 .tag{display:inline-block;padding:1px 8px;border-radius:4px;font-size:.78rem;font-weight:700;color:var(--on-tag);background:var(--tc);white-space:nowrap}
 .t1{--tc:var(--t1)} .t2{--tc:var(--t2)} .t3{--tc:var(--t3)} .tx{--tc:var(--tx)}
+.t4{--tc:#a1347f}
+.t0{--tc:#34495e}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .t0{--tc:#9fb3c8}}
+:root[data-theme="dark"] .t0{--tc:#9fb3c8}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .t4{--tc:#e58ac6}}
+:root[data-theme="dark"] .t4{--tc:#e58ac6}
 .copied{font-size:.72rem;color:var(--accent);margin-left:6px;font-weight:400}
 .newbadge{font-size:.72rem;font-weight:700;color:var(--accent);border:1px solid var(--accent);border-radius:3px;padding:0 5px;margin-left:6px}
 
@@ -270,8 +287,10 @@ select{min-height:44px;font-size:1rem;border-width:2px}
 .st .sl{font-size:.72rem;font-weight:700;letter-spacing:0}
 .st.mini{width:auto;height:auto;padding:2px 10px;font-size:1.05rem;flex-direction:row;gap:6px}
 .pchip{font-size:.9rem;padding:2px 8px;border-width:2px}
-.manual{font-size:.85rem}
-.pages h3{font-size:.95rem;color:var(--ink);font-weight:700}
+.stcol{display:flex;flex-direction:column;align-items:center;gap:5px}
+.mbadge{display:flex;flex-direction:column;align-items:center;width:70px;padding:3px 2px;border-radius:6px;background:var(--accent);color:var(--surface);line-height:1.25;text-align:center}
+.mbadge b{font-size:.88rem;font-weight:700}
+.mbadge small{font-size:.82rem;font-weight:400;opacity:.95}.pages h3{font-size:.95rem;color:var(--ink);font-weight:700}
 .plist{grid-template-columns:repeat(auto-fill,minmax(100px,1fr))}
 .pg .pn{font-size:.85rem}
 .pg .pt{font-size:.88rem}
@@ -433,10 +452,20 @@ body{background:var(--bg)}
   </form>
 </div>
 
+<div class="viewer" id="choiceBox" hidden role="dialog" aria-modal="true" aria-labelledby="choiceTitle">
+  <div class="dlg">
+    <h2 id="choiceTitle"></h2>
+    <p id="choiceText"></p>
+    <div class="choices" id="choiceBtns"></div>
+  </div>
+</div>
+
 <div class="viewer" id="viewer" hidden>
   <div class="vbar">
-    <span class="vhint">マウスのホイールで拡大・縮小、ドラッグで移動、ダブルクリックで元の大きさ</span>
+    <span class="vhint">マウスのホイールで拡大・縮小、ドラッグで移動、ダブルクリックで元の大きさ。横向きのページは「回す」で向きを直せます</span>
     <div class="vbtns">
+      <button class="btn" type="button" id="rotLeft" aria-label="左に90度回す">⟲ 左に回す</button>
+      <button class="btn" type="button" id="rotRight" aria-label="右に90度回す">⟳ 右に回す</button>
       <button class="btn" type="button" id="zoomOut" aria-label="縮小">－ 縮小</button>
       <span class="vzoom" id="zoomPct">100%</span>
       <button class="btn" type="button" id="zoomIn" aria-label="拡大">＋ 拡大</button>
@@ -455,19 +484,33 @@ import Anthropic from "https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@1.6.0/+esm
 /* ================= 設定 ================= */
 const MODEL = "claude-opus-5-5";
 const VENDOR_BATCH = 4;     // 業者PDFは1回に何ページずつ読ませるか
-const TAIKEI_MAX_IMAGES = 9;
+const TAIKEI_MAX_IMAGES = 51;   // 体系図は（全体図1枚＋拡大図16枚）×最大3ページ
 
 /* ================= ルール ================= */
 const TIERS = {
+  moto:{label:"元請（受注者）", short:"元請", cls:"t0"},
   s1:{label:"1次下請（施工体制台帳）", short:"1次", cls:"t1"},
   s2:{label:"2次下請（再下請負通知書）", short:"2次", cls:"t2"},
-  s3:{label:"3次以降（再下請負通知書）", short:"3次〜", cls:"t3"},
+  s3:{label:"3次下請（再下請負通知書）", short:"3次", cls:"t3"},
+  s4:{label:"4次以降（再下請負通知書）", short:"4次", cls:"t4"},
 };
 /* 施工体系図（1枚目）は照合の基準。業者ごとの書類を、体系図のその業者の記載と照らし合わせる */
 const MATCH_RULES = [
   {id:"tm_name", g:"施工体系図との照合", t:"会社名が体系図に載っている", d:"次数は体系図から自動で設定"},
 ];
 function rulesFor(tier){
+  /* 元請（受注者）の書類：福岡市の提出一覧の②〜⑥ */
+  if (tier === "moto") return [
+    ...MATCH_RULES.map(r => ({...r, d:"元請は体系図の左端の会社"})),
+    {id:"m_keiyaku", g:"書類", t:"① 請負契約書の写し（発注者と受注者）", d:"公共工事は金額を黒塗りしない"},
+    {id:"m_gijutsu", g:"書類", t:"② 監理技術者（主任技術者）の資格証の写し", d:"監理技術者資格者証・講習修了証など"},
+    {id:"m_koyou", g:"書類", t:"③ 監理技術者（主任技術者）の雇用関係の証明", d:"健康保険証等の写し。マイナ保険証の場合は従業員情報ページの印刷でも可"},
+    {id:"m_senmon", g:"書類", t:"④ 専門技術者の資格証明の写し", d:"専門技術者を置いた場合のみ"},
+    {id:"m_jiba", g:"書類", t:"⑤ 地場企業下請不使用理由書", d:"1次下請が地場企業でない場合のみ"},
+    {id:"m_kuronuri", g:"契約・台帳", t:"契約書の金額が黒塗りされていない"},
+    {id:"m_kouki", g:"契約・台帳", t:"契約書の工期が体系図の工期と一致"},
+    {id:"m_hoken_company", g:"契約・台帳", t:"保険証の事業所名が自社（技術者が社員）"},
+  ];
   const first = tier === "s1";
   /* 書類の一覧（この順番で並べ、番号は上から①②…と振る。2次以降は基本契約書がないので番号が詰まる） */
   const noKyoka = first ? "" : "2次・3次で建設業許可がない業者は対象外";
@@ -515,7 +558,7 @@ function rulesFor(tier){
   );
   return L;
 }
-const DOC_TYPES = ["施工体系図","注文書","注文請書","下請契約書","基本契約書","見積書","契約約款","施工体制台帳","再下請負通知書","建設業許可証","主任技術者資格証","実務経験証明","健康保険証・雇用証明","専門技術者資格証","作業員名簿","在留カード・ビザ","建退共報告書","インデックス・白紙","その他"];
+const DOC_TYPES = ["施工体系図","請負契約書（発注者と受注者）","監理技術者資格者証","地場企業下請不使用理由書","注文書","注文請書","下請契約書","基本契約書","見積書","契約約款","施工体制台帳","再下請負通知書","建設業許可証","主任技術者資格証","実務経験証明","健康保険証・雇用証明","専門技術者資格証","作業員名簿","在留カード・ビザ","建退共報告書","インデックス・白紙","その他"];
 const ORDER_RANK = {"注文書":1,"下請契約書":1,"注文請書":2,"見積書":3,"契約約款":4,"基本契約書":5,"建設業許可証":6,"主任技術者資格証":7,"実務経験証明":7,"健康保険証・雇用証明":8,"施工体制台帳":9,"再下請負通知書":9,"作業員名簿":10,"在留カード・ビザ":10,"建退共報告書":10};
 const OFFICIAL = `- 施工体制台帳・再下請負通知書・下請契約書（注文書・請書）・施工体系図の日付を漏れなく記載し、書類間で日付・工期を整合させる
 - 社会保険は未加入がないこと。適用除外は理由が説明できること
@@ -589,7 +632,9 @@ function sameCompany(a, b){
 }
 function guessTier(name){
   const s = String(name).normalize("NFKC");
-  if (/(3|三)次|(4|四)次/.test(s)) return "s3";
+  if (/元請|受注者/.test(s)) return "moto";
+  if (/([4-9]|四|五|六)次/.test(s)) return "s4";
+  if (/(3|三)次/.test(s)) return "s3";
   if (/(2|二)次/.test(s)) return "s2";
   return "s1";
 }
@@ -705,7 +750,14 @@ const store = {
   getImage(id){ return tx("images", "readonly", t => t.objectStore("images").get(id)); },
   delImage(id){ return tx("images", "readwrite", t => t.objectStore("images").delete(id)); },
 };
-function sortFolders(){ folders.sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0)); }
+/* 体系図の左端の元請も、業者一覧の先頭に入れる（前に作ったフォルダにも自動で足す） */
+function ensureMoto(f){
+  if (!f || !f.info || !f.info.motouke) return f;
+  if ((f.slots || []).some(s => s.tier === "moto")) return f;
+  f.slots = [{key:"k0", name:String(f.info.motouke).slice(0,60), tier:"moto", parent:"発注者", work:"工事全体（元請）", kouki:f.info.kouki || "", shunin:"", kyoka:""}, ...(f.slots || [])];
+  return f;
+}
+function sortFolders(){ folders.forEach(ensureMoto); folders.sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0)); }
 function hashFid(){ const m = /^#f-([A-Za-z0-9]+)$/.exec(location.hash || ""); return m ? m[1] : null; }
 function dbErrText(e){
   if (e && e.name === "QuotaExceededError") return "ブラウザの保存容量がいっぱいです。古いフォルダを削除するか、バックアップを取ってから整理してください。";
@@ -849,15 +901,139 @@ function cropHalves(canvas){
   })));
 }
 
+/* 体系図を「横○×縦○」に重なりを付けて切り分ける（AIが細かい文字を拡大して読めるように） */
+function cropGrid(canvas, cols, rows, ov){
+  const W = canvas.width, H = canvas.height, tw = W / cols, th = H / rows;
+  const jobs = [];
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++){
+    const x0 = Math.max(0, c * tw - tw * ov), y0 = Math.max(0, r * th - th * ov);
+    const x1 = Math.min(W, (c + 1) * tw + tw * ov), y1 = Math.min(H, (r + 1) * th + th * ov);
+    jobs.push(new Promise(res => {
+      const cv = document.createElement("canvas"); cv.width = Math.floor(x1 - x0); cv.height = Math.floor(y1 - y0);
+      cv.getContext("2d").drawImage(canvas, x0, y0, x1 - x0, y1 - y0, 0, 0, cv.width, cv.height);
+      cv.toBlob(res, "image/jpeg", 0.9);
+    }));
+  }
+  return Promise.all(jobs);
+}
+function downscaleCanvas(canvas, megapixels){
+  const sc = Math.min(1, Math.sqrt(megapixels * 1e6 / (canvas.width * canvas.height)));
+  const c = document.createElement("canvas");
+  c.width = Math.round(canvas.width * sc); c.height = Math.round(canvas.height * sc);
+  const ctx = c.getContext("2d"); ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(canvas, 0, 0, c.width, c.height);
+  return new Promise(r => c.toBlob(r, "image/jpeg", 0.88));
+}
+/* 送れる枚数に合わせて、いちばん細かい切り分け方を選ぶ（全体図1枚＋拡大図）。4×4なら全体図の約4倍（400%）の大きさで読める */
+async function buildTaikeiImages(pages, limit){
+  const grids = [[4,4],[4,3],[3,2],[2,2],[2,1],[1,1]];
+  for (const [a, b] of grids){
+    const per = 1 + (a * b > 1 ? a * b : 0);
+    if (pages.length * per > limit && !(a === 1 && b === 1)) continue;
+    const images = []; let partDesc = "全体図1枚";
+    for (const p of pages){
+      const land = p.canvas.width >= p.canvas.height;
+      const cols = land ? a : b, rows = land ? b : a;
+      images.push(p.blob);
+      if (cols * rows > 1){
+        images.push(...await cropGrid(p.canvas, cols, rows, 0.08));
+        partDesc = `全体図1枚のあとに拡大図${cols * rows}枚（横${cols}列×縦${rows}段に分けたもの。左上から右へ、1段ずつ下へ進む順。となり同士は少し重なっている）`;
+      }
+    }
+    return {images: images.slice(0, Math.max(1, limit)), desc: `画像は体系図${pages.length}ページ分で、1ページごとに「${partDesc}」の順に並んでいます。会社名や工期などの細かい文字は拡大図で読み、線のつながり（どの会社がどの会社の下か）は全体図で確かめてください。拡大図の端で切れた文字は、となりの拡大図で確かめてください。`};
+  }
+}
+
 /* ---------- 体系図 → フォルダ ---------- */
+/* 体系図を読むときに必ず守る3つのこと（ユーザーの決めたルール） */
+const TAIKEI_RULES = `【体系図を読むときに必ず守る3つのこと】
+1. 線の位置：どの会社がどの1次（どの上の会社）の下にいるかは、その会社の枠から出ている線を左へたどり、枝分かれの点を通って行き着く枠で決める。並び順や距離の近さでは決めない。
+   同じ段（同じ高さ）に並んでいる2次でも、線が上や下の別の1次から来ていれば、その別の1次の下に付く。
+   例：上の段が「1次●→2次●→2次△」、下の段が「1次△→2次△→2次△」のとき、上の段の右端の「2次△」は、線をたどると下の段の「1次△」につながっていることがある。段（行）ではなく線で決める
+2. 色：次数は枠（表）の色で確かめる。オレンジ＝1次、青＝2次、緑＝3次。同じ色なら横に並んでいても同じ次数
+3. 文字：会社名の漢字・カタカナは、拡大図で1字ずつ確かめる（例：「テ」と「ティ」、「ー」の有無、似た漢字）。読めない字は推測しない`;
+/* 2回目：拡大図で文字だけを確かめる（並び・次数・契約相手のつながりは1回目を正とする） */
+function taikeiNamePrompt(desc, first){
+  return `添付画像は、福岡市の公共建築工事の「施工体系図」です。${desc}
+${TAIKEI_RULES}
+この2回目では、とくに3つ目（拡大して漢字・カタカナを1字ずつ確かめる）を行う。
+下は全体図から読み取った1回目の結果です。会社の並び・次数（tier）・契約相手（parent）のつながりは正しいものとして扱ってください。
+拡大図で文字を1つずつ確かめ、会社名・工事内容・工期・主任技術者・許可・工事名・元請名の読み間違いだけを直してください。
+守ること：
+- vendors の件数と順番は変えない（1件ずつ同じ位置で直す）。会社を足したり消したりしない
+- tier は変えない。parent は、つながりは変えずに、直した会社名の書き方に合わせるだけにする
+- 拡大図の端で切れた文字は、となりの拡大図で確かめる
+- 読めない文字は推測せず、1回目の文字のままにする
+- 1回目に入っていない会社が拡大図に見つかった場合だけ、vendors とは別に missing に入れる（tier と parent も書く）
+回答は次の形のJSONだけ：
+{"koujimei":"","motouke":"","date":"","kouki":"","vendors":[{"name":"","tier":1,"parent":"","work":"","kouki":"","shunin":"","kyoka":""}],"missing":[]}
+1回目の結果：
+${JSON.stringify(first || {}).slice(0, 20000)}`;
+}
+/* 契約相手の念のための見直し：契約相手は必ず「1つ上の次数」の会社。
+   同じ次数（例：2次→2次）や体系図にない名前になっていたら、一覧で直前にある1つ上の次数の会社に付け直す */
+function fixParents(vendors, motouke){
+  const list = vendors.map(v => ({...v}));
+  list.forEach((v, i) => {
+    const t = Number(v.tier) || 1;
+    if (t <= 1){ if (motouke && !v.parent) v.parent = motouke; return; }
+    const ok = list.some((u, k) => k !== i && (Number(u.tier) || 1) === t - 1 && sameCompany(u.name, v.parent));
+    if (ok) return;
+    for (let k = i - 1; k >= 0; k--){
+      if ((Number(list[k].tier) || 1) === t - 1){ v.parent = list[k].name; return; }
+    }
+  });
+  return list;
+}
+/* 1回目（つながり）と2回目（文字）を合わせる。次数と契約相手の「どの会社か」は1回目に従い、名前の文字は2回目を使う */
+function mergeTaikei(a, b){
+  const va = Array.isArray(a && a.vendors) ? a.vendors : [];
+  const vb = Array.isArray(b && b.vendors) ? b.vendors : [];
+  if (!va.length) return b && Array.isArray(b.vendors) ? b : a;
+  if (vb.length !== va.length) return a;   // 件数が変わったら2回目は使わない
+  const motoA = String(a.motouke || ""), motoB = String((b && b.motouke) || a.motouke || "");
+  const pick = (x, y) => (y && String(y).trim() && !/判読不可/.test(y)) ? y : x;
+  const out = va.map((x, i) => ({...x,
+    name: pick(x.name, vb[i].name), work: pick(x.work, vb[i].work), kouki: pick(x.kouki, vb[i].kouki),
+    shunin: pick(x.shunin, vb[i].shunin), kyoka: pick(x.kyoka, vb[i].kyoka), tier: x.tier}));
+  out.forEach((x, i) => {
+    const p = va[i].parent;
+    const j = va.findIndex((y, k) => k !== i && sameCompany(y.name, p) && Number(y.tier) < Number(va[i].tier));
+    x.parent = j >= 0 ? out[j].name : (sameCompany(p, motoA) ? motoB : p);
+  });
+  const extra = Array.isArray(b && b.missing) ? b.missing.filter(m => m && m.name && !out.some(o => sameCompany(o.name, m.name))) : [];
+  return {...a, koujimei: pick(a.koujimei, b.koujimei), motouke: motoB, date: pick(a.date, b.date), kouki: pick(a.kouki, b.kouki), vendors: out.concat(extra)};
+}
+function taikeiReviewPrompt(desc, first){
+  return taikeiPrompt(desc) + `
+
+## 見直し（2回目）
+下は1回目に読み取った結果です。拡大図を1枚ずつ丁寧に見直し、間違いを直した「完全な結果」を同じ形のJSONで返してください。
+確認すること：
+- 体系図にある下請業者がすべて入っているか（抜け・重複がないか）。拡大図の端で切れている会社も忘れない
+- 会社名の文字（漢字・カタカナ・「株式会社」の位置）が正しいか
+- tier（次数）：左から何列目か。元請に直接つながる列が1次
+- parent：線をたどって、すぐ左でつながっている会社になっているか
+- 工事内容・工期・主任技術者・許可の読み間違い
+1回目の結果：
+${JSON.stringify(first || {}).slice(0, 20000)}`;
+}
 function taikeiPrompt(desc){
   return `添付画像は、福岡市の公共建築工事の「施工体系図（工事作業所災害防止協議会兼施工体系図）」です。${desc}
+${TAIKEI_RULES}
 読み取って、次の形のJSONだけを返してください：
 {"koujimei":"工事名","motouke":"元請（受注者）名。JVならJV名","date":"体系図の作成日・提出日（記載どおり。無ければ空文字）","kouki":"全体の工期（記載どおり）",
 "vendors":[{"name":"会社名","tier":1,"parent":"契約の相手（1次なら元請名、2次なら注文者の1次業者名）","work":"担当工事（工種）","kouki":"その業者の工期","shunin":"主任技術者名（資格）","kyoka":"許可業種・許可番号（記載どおり）"}]}
 - この体系図は、後で各業者の提出書類と照らし合わせる基準に使う。書かれていることをそのまま正確に写す
-- vendors には体系図に載っている下請業者をすべて、上位から順に入れる。元請は入れない。同じ会社が複数の工事で載っている場合は1つにまとめ、workに並べる
-- tier は 1次=1、2次=2、3次以降=3（線のつながり・注文者から判断）
+- 体系図の読み方：左から右へ「元請 → 1次 → 2次 → 3次」の順に列が並び、どの段も同じ並び方。会社の枠は線でつながり、右の会社は線でつながった左の会社と契約している（＝parent）
+- 1つの1次業者の右に、2次が上下に複数並ぶことがある。上から読んで「1次 → 2次 → 3次 → 2次」の順に出てきても、後の2次も同じ1次業者の下に付いている（線をたどってparentを決める）。そのとき1次業者を2回入れない
+- 会社の枠（表）は次数ごとに色分けされている：オレンジ（だいだい色）の枠＝1次、青の枠＝2次、緑の枠＝3次。tier はまずこの色で決める
+- 色で決められないとき（色が薄い・白黒・4次以降など）は、列の位置（左から何列目か）と線のつながりで決める：元請に直接つながる列が1次=1、その右が2次=2、さらに右が3次=3、その右が4次=4（5次以降も4）
+- 色と列の位置が食い違うときは色を優先する。parent は、その会社より1つ上の次数の色の枠で、線でつながっている会社にする
+- 線の位置をよく確かめる。1つの1次から出た線が途中で枝分かれし（↗ や → のように）、同じ色（同じ次数）の2次が横や斜めに並んでいることがある。例「1次→2次 ↗2次→2次」「1次→2次 →2次→2次」
+  このとき、右側に並んだ2次も2次のまま（3次にしない）。同じ色の枠どうしは契約関係ではないので、2次の parent を2次にしない
+  parent は、その会社の枠から出ている線を左へたどり、分かれ目（枝分かれの点）を通って、最初に行き着く「1つ上の次数の色」の枠の会社にする
+- vendors には体系図に載っている下請業者をすべて入れる。並び順は「1次 → その下の2次 → その下の3次 → 次の2次 …」のように、親の下に子が続く順にする。元請は入れない。同じ会社が同じ親の下で複数の工事を受けている場合は1つにまとめ、workに並べる
 - 書かれていない項目は空文字にする
 - 読めない文字は推測せず「判読不可」と書く`;
 }
@@ -867,30 +1043,37 @@ async function createFolder(file){
   taikeiWork = {fid, fileName:file.name, phase:"render", text:"体系図を画像にしています", error:""};
   render();
   try {
-    const {pages, numPages} = await pdfToPages(file, 3, null, 2.4);
+    // 細かい文字（漢字）まで読めるよう、体系図は大きく（約2,000万画素）画像にしてから4×4に切り分けて送る。
+    // 保存・全体図には縮小したもの（約300万画素）を使う。
+    const {pages, numPages} = await pdfToPages(file, 3, null, 20);
+    for (const p of pages){
+      const small = await downscaleCanvas(p.canvas, 3);
+      URL.revokeObjectURL(p.url); p.blob = small; p.url = URL.createObjectURL(small);
+    }
     imgCache[fid] = {};
     pages.forEach(p => { imgCache[fid][p.n] = {url:p.url, blob:p.blob}; });
     const data = {title:"", fileName:file.name, createdAt:Date.now(), pageCount:numPages, info:{}, slots:[], checks:{}, stats:{}};
     if (hasKey()){
-      taikeiWork.text = "AIが体系図を読み取っています（業者の一覧を作成中）"; render();
-      const halves = [];
-      for (const p of pages) halves.push(...await cropHalves(p.canvas));
-      let images, desc;
-      if (pages.length * 3 <= TAIKEI_MAX_IMAGES){
-        images = []; pages.forEach((p,i) => { images.push(p.blob, halves[i*2], halves[i*2+1]); });
-        desc = `画像は各ページごとに「全体図」「拡大図（前半）」「拡大図（後半）」の順で並んでいます（全${pages.length}ページ）。拡大図は細かい文字を読むためのものです。`;
-      } else {
-        images = pages.map(p => p.blob); desc = `画像は体系図の各ページです（${images.length}枚）。`;
-      }
-      const res = await askJson(taikeiPrompt(desc), images);
-      const vs = Array.isArray(res && res.vendors) ? res.vendors : [];
+      // 1回目：全体図をそのまま見て、会社の並び・次数・契約相手（線のつながり）を読む
+      taikeiWork.text = "AIが全体図で業者のつながりを読み取っています（1回目）"; render();
+      const overview = pages.map(p => p.blob).slice(0, Math.max(1, TAIKEI_MAX_IMAGES));
+      let res = await askJson(taikeiPrompt(`画像は体系図${pages.length}ページ分の全体図です（1ページ1枚）。線のつながりをたどって、次数と契約相手を正しく読み取ってください。`), overview);
+      // 2回目：拡大図で、会社名などの文字だけを確かめて直す（次数・契約相手は1回目のまま）
+      taikeiWork.text = "AIが拡大図で会社名を確認しています（2回目）"; render();
+      try {
+        const plan = await buildTaikeiImages(pages, TAIKEI_MAX_IMAGES);
+        const res2 = await askJson(taikeiNamePrompt(plan.desc, res), plan.images);
+        res = mergeTaikei(res, res2);
+      } catch(e){ /* 確認に失敗したときは1回目の結果を使う */ }
+      const vs = fixParents(Array.isArray(res && res.vendors) ? res.vendors : [], res && res.motouke);
       data.info = {koujimei:String(res.koujimei || ""), motouke:String(res.motouke || ""), date:String(res.date || ""), kouki:String(res.kouki || "")};
       data.slots = vs.filter(v => v && v.name).slice(0, 120).map((v,i) => ({
         key:"k"+(i+1), name:String(v.name).slice(0,60),
-        tier: Number(v.tier) >= 3 ? "s3" : Number(v.tier) === 2 ? "s2" : "s1",
+        tier: Number(v.tier) >= 4 ? "s4" : Number(v.tier) === 3 ? "s3" : Number(v.tier) === 2 ? "s2" : "s1",
         parent:String(v.parent || "").slice(0,60), work:String(v.work || "").slice(0,80),
         kouki:String(v.kouki || "").slice(0,60), shunin:String(v.shunin || "").slice(0,40), kyoka:String(v.kyoka || "").slice(0,60),
       }));
+      data.slots = dedupeSlots(data.slots);
     }
     taikeiWork.text = "体系図の画像を保存しています"; render();
     const tp = pages.map(p => ({n:p.n}));
@@ -912,6 +1095,86 @@ async function createFolder(file){
 }
 
 /* ---------- 業者PDF ---------- */
+/* ページごとの元ファイル（この画面を開いている間だけ。拡大して読み直すときに使う）
+   zoomSources[業者][ページ番号] = {file:元のPDFか画像, k:そのファイルの何ページ目か, isImage} */
+const zoomSources = {};
+/* 拡大して読み直すページ（細かい文字・番号・印が大事な書類）。判読できなかったページも読み直す */
+const ZOOM_TYPES = ["注文書","注文請書","下請契約書","基本契約書","施工体制台帳","再下請負通知書","作業員名簿","在留カード・ビザ","建設業許可証","健康保険証・雇用証明","主任技術者資格証","実務経験証明","請負契約書（発注者と受注者）","監理技術者資格者証","判読不可"];
+function zoomReadPrompt(obj, p, gridDesc){
+  const rules = readPrompt(obj, [p.n]).split("\n\ntext には")[1].split("\n\n回答は")[0];
+  return `あなたは福岡市の公共建築工事で「施工体制台帳」一式を点検する担当者の補助です。
+添付画像は、ある業者（区分: ${TIERS[obj.tier].label}）の提出書類PDFの ${p.n} ページ目です。1枚目が全体図、2枚目以降が拡大図（${gridDesc}）です。
+1回目に全体図だけで読み取った結果：種類「${p.type}」／会社「${p.company || ""}」／内容「${(p.text || "").replace(/\s+/g, " ")}」
+拡大図で細かい文字を1字ずつ確かめ、1回目の読み間違い・「判読不可」・書き漏れを直した結果を返してください。とくに次を確かめる：
+会社名・氏名の漢字とカタカナ／日付と工期／許可番号・雇用保険番号などの番号／押印・収入印紙・黒塗りの有無／在留カードの満了日／作業員名簿の※欄の記号と氏名
+拡大図の端で切れた文字は、となりの拡大図で確かめる。読めない字は推測せず「判読不可」のままにする。
+
+書類の種類は次のどれか1つ：${DOC_TYPES.join("／")}
+
+text には${rules}
+
+回答は次の形のJSONだけ：
+{"p":${p.n},"type":"書類の種類","company":"このページの主な会社名（不明なら空文字）","text":"読み取った事項","unreadable":false}`;
+}
+async function renderPdfPage(doc, n, megapixels){
+  const page = await doc.getPage(n);
+  const vp1 = page.getViewport({scale:1});
+  const vp = page.getViewport({scale: Math.sqrt(megapixels * 1e6 / (vp1.width * vp1.height))});
+  const c = document.createElement("canvas");
+  c.width = Math.floor(vp.width); c.height = Math.floor(vp.height);
+  const ctx = c.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height);
+  await page.render({canvasContext:ctx, viewport:vp}).promise;
+  return c;
+}
+/* 2回目：細かい文字の多いページを、大きく画像にして4分割（または2分割）し、拡大図で読み直す */
+/* 拡大用に、そのページを大きく画像にする（元のPDFの何ページ目か、差し替えた画像かを覚えておいて使う） */
+async function zoomCanvas(src, docs){
+  if (src.isImage){
+    const bmp = await createImageBitmap(src.file);
+    const sc = Math.min(1, Math.sqrt(6e6 / (bmp.width * bmp.height)));
+    const c = document.createElement("canvas");
+    c.width = Math.round(bmp.width * sc); c.height = Math.round(bmp.height * sc);
+    const ctx = c.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height);
+    ctx.drawImage(bmp, 0, 0, c.width, c.height);
+    return c;
+  }
+  let doc = docs.get(src.file);
+  if (!doc){ doc = await pdfjs.getDocument({data: await src.file.arrayBuffer(), isEvalSupported:false}).promise; docs.set(src.file, doc); }
+  return renderPdfPage(doc, src.k, 6);
+}
+async function zoomReread(w, pages){
+  const vid = w.vid;
+  const limit = Math.max(0, TAIKEI_MAX_IMAGES);
+  const map = zoomSources[vid] || {};
+  pages = pages.filter(p => map[p.n]);
+  if (limit < 3 || !pages.length) return;
+  const grid = limit >= 5 ? [2, 2] : [1, 2];
+  w.phase = "zoom"; w.progress = {done:0, total:pages.length}; render();
+  const docs = new Map();
+  for (const p of pages){
+    try {
+      const cv = await zoomCanvas(map[p.n], docs);
+      const land = cv.width >= cv.height;
+      const cols = land ? Math.max(grid[0], grid[1]) : grid[0], rows = land ? Math.min(grid[0], grid[1]) : grid[1];
+      const tiles = await cropGrid(cv, cols, rows, 0.08);
+      const base = imgCache[vid] && imgCache[vid][p.n] ? imgCache[vid][p.n].blob : await downscaleCanvas(cv, 1.5);
+      const gridDesc = `横${cols}列×縦${rows}段に分けたもの。左上から右へ、1段ずつ下へ進む順。となり同士は少し重なっている`;
+      const r = await askJson(zoomReadPrompt(w.obj, p, gridDesc), [base, ...tiles].slice(0, limit));
+      const hit = Array.isArray(r) ? r[0] : r;
+      if (hit && (hit.text || hit.type)){
+        if (DOC_TYPES.includes(String(hit.type))) p.type = String(hit.type);
+        if (hit.text) p.text = String(hit.text).slice(0, 600);
+        if (hit.company) p.company = String(hit.company).slice(0, 60);
+        p.unreadable = !!hit.unreadable;
+        p.zoomed = true;
+      }
+    } catch(e){
+      if (e && ["not_granted","sampling_disabled","rate_limited","no_key","session_expired"].includes(e.code)) throw e;
+      if (e && [401, 403, 429].includes(e.status)) throw e;
+    }
+    w.progress.done++; render();
+  }
+}
 function readPrompt(obj, nums){
   return `あなたは福岡市の公共建築工事で「施工体制台帳」一式を点検する担当者の補助です。
 添付画像は、ある業者（区分: ${TIERS[obj.tier].label}）の提出書類PDFの ${nums.join("、")} ページ目をスキャンしたものです（画像の順番＝ページ順）。
@@ -959,6 +1222,7 @@ function judgePrompt(obj, slot, folder, rules, orderInfo){
 ## 施工体系図での記載（照合の基準）
 工事名:${info.koujimei || "不明"}／元請:${info.motouke || "不明"}この業者:${slotLine}
 この業者の次数（1次・2次・3次）は体系図から決めてあるので、それを前提に判定する（体系図との照合項目はシステム側で確認済み）。
+区分が「元請（受注者）」の場合は、元請自身の書類（発注者との請負契約書、監理技術者の資格証・雇用証明など）を点検する。m_senmon は専門技術者の資格証明のページがあれば ok、無ければ na。m_jiba は理由書のページがあれば ok、無ければ na（地場企業かどうかはここでは判断しない）。m_kouki は契約書の工期と上の全体工期を比べる。
 
 ## 公式ルール（福岡市）
 ${OFFICIAL}
@@ -973,7 +1237,7 @@ ${ruleLines}
 ${pageLines}
 
 回答は次の形のJSONだけ：
-{"company":"この業者の会社名","summary":"全体の所見（60字以内、不足を優先）","items":[{"id":"項目id","status":"ok|ng|warn|na","note":"根拠や問題点（50字以内）","pages":[関係するページ番号]}]}
+{"company":"この業者の会社名","chumonsha":"注文書・注文請書の注文者（この業者に発注した会社）の名前。書類から読めなければ空文字","summary":"全体の所見（60字以内、不足を優先）","items":[{"id":"項目id","status":"ok|ng|warn|na","note":"根拠や問題点（50字以内）","pages":[関係するページ番号]}]}
 点検項目のすべてのidについて1つずつ返してください。
 note の書き方：ng と warn のときは必ず、何が問題かを具体的に書く（どの書類の、どの欄が、どうなっているか）。例「代表者名の記載なし（請書）」「工期が注文書と台帳で違う（注文書R8.11.1〜／台帳R8.12.1〜）」「収入印紙が貼られていない（請書p2）」「満了日R8.10.31で期限切れ（山田太郎）」。ok と na のときは短い根拠でよい（空でも可）。`;
 }
@@ -988,12 +1252,59 @@ function checkOrder(pages){
 }
 function manualResults(tier){ const r = {}; for (const x of rulesFor(tier)) r[x.id] = {status:"todo", note:"", pages:[]}; return r; }
 function folderById(fid){ return folders.find(f => f.id === fid); }
+/* 同じ会社が同じ次数・同じ親で2回出てきたら1つにまとめる（1次は親が元請なので社名だけで判断） */
+function dedupeSlots(slots){
+  const out = [];
+  for (const s of slots){
+    const hit = out.find(o => o.tier === s.tier && sameCompany(o.name, s.name) && (s.tier === "s1" || sameCompany(o.parent, s.parent)));
+    if (!hit){ out.push(s); continue; }
+    if (s.work && !String(hit.work).includes(s.work)) hit.work = [hit.work, s.work].filter(Boolean).join("・").slice(0,80);
+    for (const k of ["kouki","shunin","kyoka","parent"]) if (!hit[k] && s[k]) hit[k] = s[k];
+  }
+  return out;
+}
+/* 体系図の業者を「1次 → その下の2次 → その下の3次」の親子の順に並べる（契約相手の会社名でつなぐ） */
+function treeOrder(slots){
+  const out = [], used = new Set();
+  const kids = (parent, tier) => slots.filter(s => !used.has(s.key) && s.tier === tier && sameCompany(s.parent, parent.name));
+  const walk = (s) => {
+    if (used.has(s.key)) return;
+    used.add(s.key); out.push(s);
+    if (s.tier === "s1") kids(s, "s2").forEach(walk);
+    else if (s.tier === "s2") kids(s, "s3").forEach(walk);
+    else if (s.tier === "s3") kids(s, "s4").forEach(walk);
+  };
+  slots.filter(s => s.tier === "moto").forEach(s => { if (!used.has(s.key)){ used.add(s.key); out.push(s); } });
+  slots.filter(s => s.tier === "s1").forEach(walk);
+  slots.filter(s => s.tier === "s2").forEach(walk);
+  slots.forEach(walk);
+  return out;
+}
 function vendorTier(d, slot){ return (d && d.tierManual) || (slot ? slot.tier : (d && d.tier) || "s1"); }
 function slotOf(folder, key){ return folder && key ? (folder.slots || []).find(s => s.key === key) : null; }
+/* ファイル名から体系図の業者を探す。「株式会社」なしの名前や「博多配管」のような短い呼び名でも当てる */
 function matchSlotByName(folder, text){
   if (!folder) return null;
-  const n = norm(text);
-  return (folder.slots || []).find(s => norm(s.name).length >= 2 && n.includes(norm(s.name))) || null;
+  const slots = (folder.slots || []).filter(s => norm(s.name).length >= 2);
+  const n = norm(String(text || "").replace(/\.pdf$/i, ""));
+  // 1) ファイル名に会社名がまるごと入っている（株式会社などは無視）
+  const full = slots.filter(s => n.includes(norm(s.name)));
+  if (full.length) return full.sort((a, b) => norm(b.name).length - norm(a.name).length)[0];
+  // 2) ファイル名の一部（数字や記号、「次」「元請」などで区切った語）が会社名の頭や一部に入っている
+  const words = String(text || "").replace(/\.pdf$/i, "").normalize("NFKC")
+    .split(/[\s_\-－ー・.,、。()（）［］\[\]【】「」0-9０-９]+|[1-4一二三四]次|元請|下請|提出|書類|施工体制台帳|再下請負通知書/)
+    .map(norm).filter(w => w.length >= 3);
+  const hits = [];
+  for (const s of slots){
+    const sn = norm(s.name);
+    const best = Math.max(0, ...words.filter(w => sn.includes(w) || w.includes(sn)).map(w => Math.min(w.length, sn.length)));
+    if (best) hits.push({s, best});
+  }
+  if (!hits.length) return null;
+  hits.sort((a, b) => b.best - a.best);
+  // 同じくらい当てはまる会社が2社以上あるときは決めない（間違った割り当てを防ぐ）
+  if (hits.length > 1 && hits[0].best === hits[1].best) return null;
+  return hits[0].s;
 }
 
 async function processVendor(w, mode){
@@ -1004,9 +1315,11 @@ async function processVendor(w, mode){
     if (mode === "full"){
       if (!imgCache[vid] && w.file){
         w.phase = "render"; w.progress = {done:0,total:0}; render();
-        const {pages, numPages} = await pdfToPages(w.file, 80, (i,t) => { w.progress = {done:i,total:t}; render(); }, 1.25);
+        const {pages, numPages} = await pdfToPages(w.file, 80, (i,t) => { w.progress = {done:i,total:t}; render(); }, 1.5);
         imgCache[vid] = {};
         pages.forEach(p => { imgCache[vid][p.n] = {url:p.url, blob:p.blob}; p.canvas = null; });
+        zoomSources[vid] = {};
+        pages.forEach(p => { zoomSources[vid][p.n] = {file:w.file, k:p.n, isImage:false}; });
         obj.pages = pages.map(p => ({n:p.n, type:"", company:"", text:"", unreadable:false}));
         if (numPages > 80) w.error = `ページ数が多いため先頭80ページだけを読み込みました（全${numPages}ページ）。`;
       } else {
@@ -1032,6 +1345,9 @@ async function processVendor(w, mode){
         });
         w.progress.done += batch.length; render();
       }
+      // 細かい文字の多いページ・読めなかったページは、拡大して読み直す
+      // （差し替えたページは、書類の種類にかかわらず必ず拡大して確かめる）
+      await zoomReread(w, todo.filter(p => p.replaced || ZOOM_TYPES.includes(p.type) || p.unreadable || /判読不可/.test(p.text || "")));
     }
     const folder = folderById(fid);
     if (!obj.slot){
@@ -1057,10 +1373,14 @@ async function processVendor(w, mode){
       obj.results[r.id] = {status:st, note: note || (st === "ng" || st === "warn" ? "問題の内容が読み取れませんでした（原本で確認）" : ""), pages: it && Array.isArray(it.pages) ? it.pages.map(Number).filter(n => n > 0 && n <= obj.pages.length).slice(0,8) : []};
     }
     // 手で付けた判定は、差し替え・再判定のあとも残す（AIが×→○に変わった項目は手動のものを優先しない）
-    for (const [k, r] of Object.entries(prevManual)){
-      const now = obj.results[k];
-      if (now && now.status === "ok" && r.status !== "ok") continue;
-      obj.results[k] = r;
+    // manualMode：keep＝手で直した判定をそのまま残す／drop＝すべてAIの判定にする／auto＝残すがAIが○にしたものは○
+    const manualMode = w.manualMode || "auto";
+    if (manualMode !== "drop"){
+      for (const [k, r] of Object.entries(prevManual)){
+        const now = obj.results[k];
+        if (manualMode === "auto" && now && now.status === "ok" && r.status !== "ok") continue;
+        obj.results[k] = r;
+      }
     }
     if (slot) obj.results.tm_name = {status:"ok", note:`体系図の「${slot.name}」（${TIERS[slot.tier].short}）`, pages:[]};
     else {
@@ -1068,6 +1388,7 @@ async function processVendor(w, mode){
       for (const r of MATCH_RULES) if (r.id !== "tm_name") obj.results[r.id] = {status:"warn", note:"体系図に載っていないため照合できません", pages:[]};
     }
     if (res && res.company) obj.name = String(res.company).slice(0,60);
+    obj.chumonsha = res && res.chumonsha ? String(res.chumonsha).slice(0,60) : "";
     obj.summary = res && res.summary ? String(res.summary).slice(0,200) : "";
     await saveVendor(w);
   } catch(e){
@@ -1127,18 +1448,46 @@ function counts(...lists){
   return c;
 }
 /* 体系図に書かれているこの業者の情報（照合の基準） */
-function slotInfo(s){
+function prevTier(t){ return {s2:"s1", s3:"s2", s4:"s3"}[t] || null; }
+/* 体系図の記載。契約相手は、1つ上の次数の会社から選び直せる */
+function slotInfo(s, f){
+  const up = prevTier(s.tier);
+  const opts = up && f ? (f.slots || []).filter(x => x.tier === up) : [];
+  const known = opts.some(o => sameCompany(o.name, s.parent));
   return h("dl",{class:"slotinfo"},
-    h("dt",{text:"体系図の記載"}), h("dd",{},
-      `会社名：${s.name}　次数：${TIERS[s.tier].short}　契約相手：${s.parent || "—"}　工事：${s.work || "—"}`));
+    h("dt",{text:"体系図の記載"}), h("dd",{}, `会社名：${s.name}　次数：${TIERS[s.tier].short}　工事：${s.work || "—"}`),
+    h("dt",{text:"契約相手"}), h("dd",{class:"parentdd"},
+      opts.length
+        ? h("select",{"aria-label":"契約相手（体系図）", onchange:(e) => setSlotParent(f, s.key, e.target.value)},
+            known ? null : h("option",{value:"", text: s.parent ? `${s.parent}（体系図にない名前）` : "（未設定）"}),
+            opts.map(o => { const op = h("option",{value:o.name, text:`${TIERS[o.tier].short}　${o.name}`}); if (sameCompany(o.name, s.parent)) op.selected = true; return op; }))
+        : (s.parent || "—"),
+      opts.length ? h("span",{class:"small muted", text:"違っていたら選び直してください"}) : null));
+}
+async function setSlotParent(f0, key, parent){
+  if (!parent) return;
+  const f = folderById(f0.id) || f0;
+  const slots = clone(f.slots).map(x => x.key === key ? {...x, parent, parentFixed:true} : x);
+  try { await store.updFolder(f.id, {slots}); refreshStats(f.id); render(); } catch(e){ notes.db = dbErrText(e); render(); }
+}
+/* 注文書の注文者と、体系図の契約相手が違うときの直し候補 */
+function parentSuggestion(f, d, slot){
+  if (!slot || !d || !d.chumonsha) return null;
+  const up = prevTier(slot.tier);
+  if (!up || sameCompany(d.chumonsha, slot.parent)) return null;
+  const hit = (f.slots || []).find(x => x.tier === up && (sameCompany(x.name, d.chumonsha) || nearName(x.name, d.chumonsha)));
+  if (!hit || sameCompany(hit.name, slot.parent) || d.parentSuggestDismissed === hit.name) return null;
+  return {slot, up:hit};
 }
 function renderSlotCard(f, s){
   const t = TIERS[s.tier];
   return h("article",{class:`card ${t.cls}`, id:"detail"}, h("div",{class:"index", text:t.short}),
     h("div",{class:"card-head"},
       h("div",{class:"name"}, h("h2",{text:s.name})),
-      h("div",{class:"acts"}, h("button",{class:"btn primary small", type:"button", onclick:()=>{ pendingSlot = s.key; slotIn.click(); }, text:"PDFを入れる"}))),
-    slotInfo(s),
+      h("div",{class:"acts"},
+        h("button",{class:"btn small", type:"button", onclick:()=>renameSlot(f, s), text:"✎ 会社名を直す"}),
+        h("button",{class:"btn primary small", type:"button", onclick:()=>{ pendingSlot = s.key; slotIn.click(); }, text:"PDFを入れる"}))),
+    slotInfo(s, f),
     h("div",{class:"err", text:"この業者の書類（PDF）はまだ提出されていません。PDFを入れると、上の体系図の記載と照らし合わせてチェックします。"}));
 }
 function currentVendors(){
@@ -1175,12 +1524,37 @@ function openViewer(cacheId, n, caption, imgId, target){
   viewerTarget = target || null;
   document.getElementById("viewerReplace").hidden = !viewerTarget;
   const src = pageSrc(cacheId, n, imgId);
+  rotSrc = src; rotDeg = 0;
+  if (rotUrl){ URL.revokeObjectURL(rotUrl); rotUrl = null; }
   const img = document.getElementById("viewerImg");
   if (src){ img.src = src; img.hidden = false; img.alt = `${n}ページ目`; } else { img.hidden = true; }
   document.getElementById("viewerCap").textContent = caption + (src ? "" : "\n（このページの画像は保存されていません）");
   document.getElementById("viewer").hidden = false;
   document.getElementById("viewerClose").focus();
   if (src){ if (img.complete && img.naturalWidth) zoomFit(); }
+}
+
+/* ---------- 回転（表示だけを90度ずつ回す。保存した画像やAIの読み取りは変えない） ---------- */
+let rotDeg = 0, rotUrl = null, rotSrc = null;
+async function rotateView(delta){
+  if (!rotSrc) return;
+  const img = document.getElementById("viewerImg");
+  rotDeg = (rotDeg + delta + 360) % 360;
+  if (rotUrl){ URL.revokeObjectURL(rotUrl); rotUrl = null; }
+  if (rotDeg === 0){ img.src = rotSrc; return; }
+  try {
+    const base = new Image(); base.src = rotSrc; await base.decode();
+    const swap = rotDeg % 180 !== 0;
+    const c = document.createElement("canvas");
+    c.width = swap ? base.naturalHeight : base.naturalWidth;
+    c.height = swap ? base.naturalWidth : base.naturalHeight;
+    const ctx = c.getContext("2d");
+    ctx.translate(c.width / 2, c.height / 2); ctx.rotate(rotDeg * Math.PI / 180);
+    ctx.drawImage(base, -base.naturalWidth / 2, -base.naturalHeight / 2);
+    const blob = await new Promise(r => c.toBlob(r, "image/jpeg", 0.92));
+    rotUrl = URL.createObjectURL(blob);
+    img.src = rotUrl;   // 読み込み終わると画面に合わせた大きさに戻る
+  } catch(e){ rotDeg = (rotDeg - delta + 360) % 360; }
 }
 
 /* ---------- 拡大・縮小・移動 ---------- */
@@ -1221,6 +1595,8 @@ function zoomCenter(factor){ const st = document.getElementById("vstage"); zoomA
   document.getElementById("zoomIn").addEventListener("click", () => zoomCenter(1.25));
   document.getElementById("zoomOut").addEventListener("click", () => zoomCenter(1 / 1.25));
   document.getElementById("zoomReset").addEventListener("click", zoomFit);
+  document.getElementById("rotLeft").addEventListener("click", () => rotateView(-90));
+  document.getElementById("rotRight").addEventListener("click", () => rotateView(90));
   window.addEventListener("resize", () => { if (!document.getElementById("viewer").hidden) zoomFit(); });
 })();
 
@@ -1361,7 +1737,7 @@ function renderMain(){
   const extras = vs.filter(v => !v.doc.slot);
   const tb = h("tbody");
   const numCells = (c) => ["ng","warn","ok"].map(k => { const n = k === "warn" ? c.warn + c.todo : c[k]; return h("td",{class:`num ${k}${n ? "" : " zero"}`, text:String(n)}); });
-  for (const s of (f.slots || [])){
+  for (const s of treeOrder(f.slots || [])){
     const v = pickFor(s.key);
     const t = TIERS[s.tier];
     const missing = !v;
@@ -1371,9 +1747,11 @@ function renderMain(){
         onclick:(e)=>{ if (e.target.closest("button")) return; selectedVid = rowId; render(); document.getElementById("detail")?.scrollIntoView({behavior:"smooth", block:"start"}); },
         onkeydown:(e)=>{ if (e.key === "Enter"){ selectedVid = rowId; render(); } }},
       h("td",{}, h("span",{class:`tag ${t.cls}`, text:t.short})),
-      h("td",{class:"vname"}, h("span",{class:"ind", text: s.tier === "s1" ? "" : s.tier === "s2" ? "└ " : "　└ "}), s.name,
+      h("td",{class:"vname"}, s.name,
         v && v.doc.copiedFrom ? h("span",{class:"copied", text:"引継ぎ"}) : null,
-        prevNames && !prevNames.some(n => sameCompany(n, s.name)) ? h("span",{class:"newbadge", text:"新規"}) : null),
+        prevNames && !prevNames.some(n => sameCompany(n, s.name)) ? h("span",{class:"newbadge", text:"新規"}) : null,
+        v && !v.w && nameSuggestion(f, v.doc, s) ? h("span",{class:"sugbadge", text:"名前の直し候補あり"}) : null,
+        v && !v.w && parentSuggestion(f, v.doc, s) ? h("span",{class:"sugbadge", text:"契約相手の直し候補あり"}) : null),
       h("td",{class:"cell-sub", text:s.work || "—"}),
       h("td",{class:"cell-sub", text:s.parent || "—"}),
       ...(missing ? [h("td",{class:"num zero", text:"—"}), h("td",{class:"num zero", text:"—"}), h("td",{class:"num zero", text:"—"})] : numCells(c)),
@@ -1386,7 +1764,7 @@ function renderMain(){
       const c = counts(v.doc.results);
       tb.append(h("tr",{class:"vrow", "aria-selected": String(v.id === selectedVid), tabindex:"0", onclick:()=>{ selectedVid = v.id; render(); }},
         h("td",{}, h("span",{class:"tag tx", text:"未割当"})),
-        h("td",{class:"vname", text: v.doc.name || v.doc.fileName}),
+        h("td",{class:"vname"}, v.doc.name || v.doc.fileName, !v.w && nameSuggestion(f, v.doc, null) ? h("span",{class:"sugbadge", text:"体系図の会社と一致の候補あり"}) : null),
         h("td",{class:"cell-sub", text:v.doc.fileName}), h("td",{class:"cell-sub", text:"—"}),
         ...numCells(c), h("td",{}, rowVerdict(v, false)), h("td",{})));
     }
@@ -1436,7 +1814,7 @@ function renderCard(v, f){
 
   const head = h("div",{class:"card-head"},
     h("div",{class:"name"},
-      h("h2",{text: d.name || (slot && slot.name) || d.fileName}),
+      h("h2",{text: (slot && slot.name) || d.name || d.fileName}),
       h("div",{class:"fileline"},
         h("span",{class:"muted small"}, d.fileName, d.pages && d.pages.length ? `　${d.pages.length}ページ` : "", slot && slot.work ? `　担当：${slot.work}` : "", d.copiedFrom ? `　（${d.copiedFrom}から引継ぎ）` : ""),
         h("span",{class:"tally", "aria-label":`不足${c.ng}件、確認${c.warn + c.todo}件、OK${c.ok}件`},
@@ -1445,12 +1823,16 @@ function renderCard(v, f){
           h("span",{class:`tc ok${c.ok ? "" : " zero"}`}, h("b",{text:"○"}), h("i",{text:"OK"}), h("em",{text:String(c.ok)}))))),
     h("div",{class:"acts"},
       tierSel,
-      !busy && !work[v.id] ? h("button",{class:"btn small", type:"button", onclick:()=>openRename({
-        heading:"業者名を変更", value:d.name || "", placeholder:(slot && slot.name) || d.fileName,
-        hint:"この業者の詳細に表示する名前です。空にして保存すると、体系図の会社名（またはファイル名）で表示します。",
-        onSave: async (name) => { await store.updVendor(f.id, v.id, {name}); },
-      }), text:"✎ 名前を変更"}) : null,
-      !busy ? h("button",{class:"btn small", type:"button", onclick:()=>rejudge(v, f, {}, true), text: hasImages(v) ? "再チェック" : "再判定"}) : null,
+      !busy && !work[v.id] ? h("button",{class:"btn small", type:"button", onclick:()=> slot ? renameSlot(f, slot) : openRename({
+        heading:"業者名を変更", value:d.name || "", placeholder:d.fileName,
+        hint:"この業者の詳細に表示する名前です。体系図の会社名に合わせると、体系図の業者に自動で割り当てて判定し直します。",
+        onSave: async (name) => {
+          await store.updVendor(f.id, v.id, {name});
+          const hit = (f.slots || []).find(s => sameCompany(s.name, name));
+          if (hit){ const patch = {slot:hit.key, tier:hit.tier, name, results:{tm_name:{status:"ok", note:`体系図の「${hit.name}」（${TIERS[hit.tier].short}）`, pages:[]}}}; await store.updVendor(f.id, v.id, patch); rejudge(v, f, patch); }
+        },
+      }), text: slot ? "✎ 会社名を直す" : "✎ 名前を変更"}) : null,
+      !busy ? h("button",{class:"btn small", type:"button", onclick:()=>askRecheck(v, f), text: hasImages(v) ? "再チェック" : "再判定"}) : null,
       !busy ? h("button",{class:"btn danger small", type:"button", onclick:async()=>{
           if (confirmDel !== "v:"+v.id){ confirmDel = "v:"+v.id; render(); setTimeout(()=>{ if (confirmDel === "v:"+v.id){ confirmDel = null; render(); } }, 5000); return; }
           confirmDel = null;
@@ -1463,12 +1845,27 @@ function renderCard(v, f){
 
   const card = h("article",{class:`card ${t.cls}`, id:"detail"}, h("div",{class:"index", text:t.short}), head);
   if (busy){
-    const label = {upload:`ページ画像を保存しています（${w.progress.done}/${w.progress.total}ページ）`, queued:"順番待ち", render:`PDFを画像にしています（${w.progress.done}/${w.progress.total || "?"}ページ）`, read:`AIがページを読み取り中（${w.progress.done}/${w.progress.total}ページ）`, judge:"体系図・ルールと照合中…"}[w.phase] || "";
+    const label = {zoom:`細かい文字のページを拡大して読み直しています（${w.progress.done}/${w.progress.total}ページ）`, upload:`ページ画像を保存しています（${w.progress.done}/${w.progress.total}ページ）`, queued:"順番待ち", render:`PDFを画像にしています（${w.progress.done}/${w.progress.total || "?"}ページ）`, read:`AIがページを読み取り中（${w.progress.done}/${w.progress.total}ページ）`, judge:"体系図・ルールと照合中…"}[w.phase] || "";
     const pct = w.progress && w.progress.total ? Math.round(w.progress.done / w.progress.total * 100) : (w.phase === "judge" ? 100 : 0);
     card.append(h("div",{class:"prog", role:"status"}, h("span",{text:label}), h("span",{class:"bar"}, h("i",{style:`width:${pct}%`}))));
   }
   if (w && w.error) card.append(h("div",{class:"err", role:"alert", text:w.error}));
-  if (slot) card.append(slotInfo(slot));
+  if (slot) card.append(slotInfo(slot, f));
+  const psug = !busy ? parentSuggestion(f, d, slot) : null;
+  if (psug) card.append(h("div",{class:"suggest", role:"status"},
+    h("div",{class:"sugtext", text:`体系図では契約相手が「${psug.slot.parent || "—"}」ですが、注文書の注文者は「${d.chumonsha}」です。体系図の線の読み間違いかもしれません。`}),
+    h("div",{class:"acts"},
+      h("button",{class:"btn primary small", type:"button", onclick:() => setSlotParent(f, psug.slot.key, psug.up.name), text:`契約相手を「${psug.up.name}」に直す`}),
+      h("button",{class:"btn small", type:"button", onclick: async () => { try { await store.updVendor(f.id, v.id, {parentSuggestDismissed: psug.up.name}); render(); } catch(e){ notes.db = dbErrText(e); render(); } }, text:"このままにする"}))));
+  const sug = !busy ? nameSuggestion(f, d, slot) : null;
+  if (sug) card.append(h("div",{class:"suggest", role:"status"},
+    h("div",{class:"sugtext", text: sug.type === "fix"
+      ? `体系図では「${sug.slot.name}」、書類では「${sug.name}」になっています。体系図の読み間違いかもしれません。`
+      : `体系図の「${sug.slot.name}」と同じ会社かもしれません（書類では「${sug.name}」）。`}),
+    h("div",{class:"acts"},
+      h("button",{class:"btn primary small", type:"button", onclick: async () => { try { await doRenameSlot(f, sug.slot, sug.name); } catch(e){ notes.db = dbErrText(e); render(); } },
+        text: sug.type === "fix" ? `体系図の名前を「${sug.name}」に直す` : `体系図の名前を「${sug.name}」に直して割り当てる`}),
+      h("button",{class:"btn small", type:"button", onclick: async () => { try { await store.updVendor(f.id, v.id, {nameSuggestDismissed: sug.name}); render(); } catch(e){ notes.db = dbErrText(e); render(); } }, text:"このままにする"}))));
   if (d.summary && !busy) card.append(h("div",{class:"aisum"}, h("b",{text:"所見　"}), d.summary));
   if (d.lastReplace && !busy) card.append(h("div",{class:"replnote", text:`p${d.lastReplace.page} を「${d.lastReplace.fileName}」${d.lastReplace.count > 1 ? `（${d.lastReplace.count}ページ）` : ""}に差し替えて判定し直しました（${fmtDate(d.lastReplace.at)}）`}));
 
@@ -1481,14 +1878,18 @@ function renderCard(v, f){
     const btn = h("button",{class:`st ${st}`, type:"button", disabled: busy || null, title:`${STATUS[st].label}（クリックで切替）`, "aria-label":`${r.t}：${STATUS[st].label}`,
       onclick:async()=>{
         const i = CYCLE.indexOf(st);
-        const patch = {results:{[r.id]:{status:CYCLE[(i+1)%CYCLE.length], note:res ? res.note || "" : "", pages:res ? res.pages || [] : [], manual:true}}};
+        const patch = {results:{[r.id]:{status:CYCLE[(i+1)%CYCLE.length], note:res ? res.note || "" : "", pages:res ? res.pages || [] : [], manual:true, aiStatus:(res ? (res.manual ? res.aiStatus : res.status) : "") || "todo"}}};
         try { await store.updVendor(f.id, v.id, patch); render(); refreshStats(f.id); } catch(err){ notes.db = dbErrText(err); render(); }
       }}, STATUS[st].sym, h("span",{class:"sl", text:STATUS[st].short}));
     const chips = res && res.pages && res.pages.length ? h("span",{class:"pchips"}, res.pages.map(n => h("button",{class:"pchip", type:"button", onclick:()=>pageView(v, n), text:"p"+n}))) : null;
     const hide = onlyIssues && !["ng","warn","todo"].includes(st);
-    checks.append(h("div",{class:`row s-${st}${hide ? " hide" : ""}`}, btn,
+    // 手で直した判定は、○△×の下に「手で変更」と、もとのAIの判定を出す
+    const ai = res && res.manual && res.aiStatus && STATUS[res.aiStatus] ? STATUS[res.aiStatus] : null;
+    const mbadge = res && res.manual ? h("div",{class:"mbadge", title:"目で確認して手で直した判定です"},
+      h("b",{text:"手で変更"}), ai ? h("small",{text: res.aiStatus === "todo" ? "AI未判定" : `AIは${ai.sym}`}) : null) : null;
+    checks.append(h("div",{class:`row s-${st}${hide ? " hide" : ""}${res && res.manual ? " is-manual" : ""}`}, h("div",{class:"stcol"}, btn, mbadge),
       h("div",{style:"min-width:0"},
-        h("div",{class:"t"}, r.t, res && res.manual ? h("span",{class:"manual", text:"手動"}) : null),
+        h("div",{class:"t"}, r.t),
         r.d ? h("div",{class:"d", text:r.d}) : null,
         (res && res.note) || chips ? h("div",{class:"note"}, res && res.note ? res.note : "", chips) : null)));
   }
@@ -1508,6 +1909,78 @@ function renderCard(v, f){
 function pageView(v, n){
   const p = (v.doc.pages || []).find(x => x.n === n);
   openViewer(v.id, n, `p${n}［${p ? p.type || "未判定" : ""}］` + (p && p.text ? "\n" + p.text : ""), p && p.img, v.w ? null : {fid:currentFid, vid:v.id, n});
+}
+
+/* ---------- 体系図の会社名を直す（AIの読み間違い対策） ---------- */
+function renameSlot(f, s){
+  openRename({
+    heading:"体系図の会社名を直す", value:s.name, placeholder:s.name,
+    hint:"AIが読み間違えた会社名を正しく直します。直した名前で業者のPDFと照らし合わせ、判定し直します（契約相手の欄に出てくる同じ名前も一緒に直します）。",
+    onSave: async (name) => { await doRenameSlot(f, s, name); },
+  });
+}
+async function doRenameSlot(f0, s, name){
+      const f = folderById(f0.id) || f0;
+      if (!name || name === s.name) return;
+      const oldName = s.name;
+      const slots = clone(f.slots).map(x => x.key === s.key ? {...x, name, nameFixed:true} : x);
+      slots.forEach(x => { if (x.key !== s.key && sameCompany(x.parent, oldName)) x.parent = name; });
+      const patch = {slots};
+      if (s.tier === "moto") patch.info = {motouke:name};
+      await store.updFolder(f.id, patch);
+      const nf = folderById(f.id);
+      // 体系図にないとされていた業者で、直した名前に合うものを割り当てる
+      for (const v of currentVendors().filter(v => !v.w && !v.doc.slot)){
+        if (sameCompany(v.doc.name, name) || (norm(name).length >= 2 && norm(v.doc.fileName).includes(norm(name)))){
+          const p = {slot:s.key, tier:s.tier, results:{tm_name:{status:"ok", note:`体系図の「${name}」（${TIERS[s.tier].short}）`, pages:[]}}};
+          await store.updVendor(f.id, v.id, p); rejudge(v, nf, p);
+        }
+      }
+      // この会社に割り当て済みの業者は、直した名前で判定し直す
+      for (const v of currentVendors().filter(v => !v.w && v.doc.slot === s.key)) rejudge(v, nf, {});
+      refreshStats(f.id);
+}
+
+/* ---------- 業者の書類の会社名から、体系図の名前の直し候補を探す ---------- */
+function lev(a, b){
+  const m = a.length, n = b.length;
+  if (!m) return n; if (!n) return m;
+  let prev = Array.from({length:n + 1}, (_, j) => j);
+  for (let i = 1; i <= m; i++){
+    const cur = [i];
+    for (let j = 1; j <= n; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    prev = cur;
+  }
+  return prev[n];
+}
+/* 1〜2字だけ違う「たぶん同じ会社」 */
+function nearName(a, b){
+  const x = norm(a), y = norm(b);
+  if (x.length < 2 || y.length < 2 || x === y) return false;
+  const d = lev(x, y);
+  return d <= Math.min(3, Math.max(1, Math.floor(Math.max(x.length, y.length) / 3)));
+}
+/* 業者の書類に出てくる会社名（AIが「この業者の会社名」とした名前を優先） */
+function docCompanies(d){
+  const cnt = {};
+  const add = (n, w) => { n = String(n || "").trim(); if (norm(n).length >= 2) cnt[n] = (cnt[n] || 0) + w; };
+  add(d.name, 3);
+  (d.pages || []).forEach(p => add(p.company, 1));
+  return Object.entries(cnt).sort((a, b) => b[1] - a[1]).map(e => e[0]);
+}
+function nameSuggestion(f, d, slot){
+  if (!d || !(d.pages || []).some(p => p.type)) return null;
+  const cands = docCompanies(d);
+  if (slot){
+    if (cands.some(c => sameCompany(c, slot.name))) return null;
+    const c = cands.find(c => nearName(c, slot.name));
+    return c && d.nameSuggestDismissed !== c ? {slot, name:c, type:"fix"} : null;
+  }
+  for (const c of cands){
+    const s = (f.slots || []).find(s => nearName(c, s.name));
+    if (s && d.nameSuggestDismissed !== c) return {slot:s, name:c, type:"assign"};
+  }
+  return null;
 }
 
 /* ---------- 1ページだけ差し替える ---------- */
@@ -1544,16 +2017,19 @@ async function replacePage(t, file){
   const idx = old.findIndex(p => p.n === t.n);
   if (idx < 0) return;
   const oldCache = imgCache[t.vid] || {};
+  const oldSrc = zoomSources[t.vid] || {};
+  const isImage = !(/\.pdf$/i.test(file.name) || file.type === "application/pdf");
   const removed = old[idx].img;
   const merged = [
-    ...old.slice(0, idx).map(p => ({...p, _c:oldCache[p.n]})),
-    ...added.map(a => ({type:"", company:"", text:"", unreadable:false, img:null, replaced:Date.now(), _c:{blob:a.blob, url:a.url}})),
-    ...old.slice(idx + 1).map(p => ({...p, _c:oldCache[p.n]})),
+    ...old.slice(0, idx).map(p => ({...p, _c:oldCache[p.n], _s:oldSrc[p.n]})),
+    ...added.map((a, k) => ({type:"", company:"", text:"", unreadable:false, img:null, replaced:Date.now(), _c:{blob:a.blob, url:a.url}, _s:{file, k:k + 1, isImage}})),
+    ...old.slice(idx + 1).map(p => ({...p, _c:oldCache[p.n], _s:oldSrc[p.n]})),
   ];
-  const cache = {};
-  merged.forEach((p, i) => { p.n = i + 1; if (p._c) cache[p.n] = p._c; delete p._c; });
+  const cache = {}, srcs = {};
+  merged.forEach((p, i) => { p.n = i + 1; if (p._c) cache[p.n] = p._c; if (p._s) srcs[p.n] = p._s; delete p._c; delete p._s; });
   obj.pages = merged;
   imgCache[t.vid] = cache;
+  zoomSources[t.vid] = srcs;   // 差し替えたページは差し替えたファイルから、ほかのページは元のPDFから拡大する
   obj.lastReplace = {at:Date.now(), page:t.n, count:added.length, fileName:file.name};
   document.getElementById("viewer").hidden = true;
   selectedVid = t.vid;
@@ -1563,12 +2039,42 @@ function hasImages(v){
   const pages = v.doc.pages || [];
   return pages.length > 0 && pages.every(p => (imgCache[v.id] && imgCache[v.id][p.n]) || p.img);
 }
-function rejudge(v, f, patch, reread){
+function rejudge(v, f, patch, reread, manualMode){
   const obj = Object.assign(clone(v.doc), patch || {});
   delete obj.id; delete obj.fid;
   const mode = reread && hasImages(v) ? "full" : "judge";
-  enqueue({fid:f.id, vid:v.id, file:null, phase:"queued", progress:{done:0,total:0}, error:"", obj}, mode);
+  enqueue({fid:f.id, vid:v.id, file:null, phase:"queued", progress:{done:0,total:0}, error:"", obj, manualMode: manualMode || "auto"}, mode);
 }
+
+/* ---------- 選択肢つきの確認の小窓 ---------- */
+function openChoice({heading, text, choices}){
+  const box = document.getElementById("choiceBox");
+  document.getElementById("choiceTitle").textContent = heading;
+  document.getElementById("choiceText").textContent = text;
+  const wrap = document.getElementById("choiceBtns");
+  wrap.replaceChildren(...choices.map(c => h("button",{class:`btn${c.primary ? " primary" : ""}`, type:"button",
+    onclick:() => { box.hidden = true; if (c.onClick) c.onClick(); }}, h("b",{text:c.label}), c.sub ? h("small",{text:c.sub}) : null)));
+  box.hidden = false;
+  const first = wrap.querySelector("button"); if (first) first.focus();
+}
+/* 再チェック：目視で手直しした判定があれば、残すか・すべてAIでやり直すかを聞く */
+function askRecheck(v, f){
+  const manual = Object.entries(v.doc.results || {}).filter(([, r]) => r && r.manual);
+  const word = hasImages(v) ? "再チェック" : "再判定";
+  if (!manual.length){ rejudge(v, f, {}, true); return; }
+  const names = manual.map(([id]) => (rulesFor(vendorTier(v.doc, slotOf(f, v.doc.slot))).find(r => r.id === id) || {}).t).filter(Boolean);
+  openChoice({
+    heading:`${word}の前に確認`,
+    text:`この業者には、目で確認して手で直した判定が ${manual.length} 件あります（${names.slice(0, 3).join("／")}${names.length > 3 ? " ほか" : ""}）。どうしますか？`,
+    choices:[
+      {label:"手で直した判定は変えない", sub:"それ以外の項目だけをAIで確かめ直します", primary:true, onClick:() => rejudge(v, f, {}, true, "keep")},
+      {label:"すべてAIで確かめ直す", sub:"手で直した判定も、AIの判定に置きかわります", onClick:() => rejudge(v, f, {}, true, "drop")},
+      {label:"やめる"},
+    ],
+  });
+}
+document.getElementById("choiceBox").addEventListener("click", e => { if (e.target.id === "choiceBox") e.currentTarget.hidden = true; });
+document.addEventListener("keydown", e => { if (e.key === "Escape") document.getElementById("choiceBox").hidden = true; });
 
 async function carryOver(f, from, btn){
   btn.disabled = true; btn.textContent = "引き継いでいます…";
@@ -1715,6 +2221,7 @@ document.addEventListener("keydown", e => {
   else if (e.key === "+" || e.key === "=") zoomCenter(1.25);
   else if (e.key === "-") zoomCenter(1 / 1.25);
   else if (e.key === "0") zoomFit();
+  else if (e.key === "r" || e.key === "R") rotateView(90);
 });
 
 document.getElementById("backupBtn").addEventListener("click", backup);
