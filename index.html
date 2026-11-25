@@ -973,8 +973,9 @@ ${ruleLines}
 ${pageLines}
 
 回答は次の形のJSONだけ：
-{"company":"この業者の会社名","summary":"全体の所見（60字以内、不足を優先）","items":[{"id":"項目id","status":"ok|ng|warn|na","note":"根拠や不足点（40字以内）","pages":[関係するページ番号]}]}
-点検項目のすべてのidについて1つずつ返してください。`;
+{"company":"この業者の会社名","summary":"全体の所見（60字以内、不足を優先）","items":[{"id":"項目id","status":"ok|ng|warn|na","note":"根拠や問題点（50字以内）","pages":[関係するページ番号]}]}
+点検項目のすべてのidについて1つずつ返してください。
+note の書き方：ng と warn のときは必ず、何が問題かを具体的に書く（どの書類の、どの欄が、どうなっているか）。例「代表者名の記載なし（請書）」「工期が注文書と台帳で違う（注文書R8.11.1〜／台帳R8.12.1〜）」「収入印紙が貼られていない（請書p2）」「満了日R8.10.31で期限切れ（山田太郎）」。ok と na のときは短い根拠でよい（空でも可）。`;
 }
 function checkOrder(pages){
   let last = 0, bad = null;
@@ -1052,7 +1053,8 @@ async function processVendor(w, mode){
       if (r.id === "order"){ obj.results.order = ord; continue; }
       const it = items.find(x => x && x.id === r.id);
       const st = it && STATUS[it.status] && it.status !== "todo" ? it.status : "warn";
-      obj.results[r.id] = {status:st, note: it ? String(it.note || "").slice(0,120) : "AIの判定が返らなかったため要確認", pages: it && Array.isArray(it.pages) ? it.pages.map(Number).filter(n => n > 0 && n <= obj.pages.length).slice(0,8) : []};
+      const note = it ? String(it.note || "").trim().slice(0,120) : "AIの判定が返らなかったため要確認";
+      obj.results[r.id] = {status:st, note: note || (st === "ng" || st === "warn" ? "問題の内容が読み取れませんでした（原本で確認）" : ""), pages: it && Array.isArray(it.pages) ? it.pages.map(Number).filter(n => n > 0 && n <= obj.pages.length).slice(0,8) : []};
     }
     // 手で付けた判定は、差し替え・再判定のあとも残す（AIが×→○に変わった項目は手動のものを優先しない）
     for (const [k, r] of Object.entries(prevManual)){
