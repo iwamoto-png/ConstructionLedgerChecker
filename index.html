@@ -640,6 +640,17 @@ function guessTier(name){
 }
 function todayJa(){ const d = new Date(); return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`; }
 function fmtDate(ms){ const d = new Date(ms); return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`; }
+/* フォルダ名のきまり：体系図から読んだ工事名。読めなかったときは「体系図 日付」 */
+function oldFolderTitle(f){ return "体系図 " + ((f.info || {}).date || fmtDate(f.createdAt)); }
+function folderTitleFor(f){ const k = String((f.info || {}).koujimei || "").trim(); return k ? k.slice(0, 80) : oldFolderTitle(f); }
+/* 前に作ったフォルダで、名前が「体系図 日付」のままなら工事名に直す（手で付けた名前は変えない） */
+const titleFixed = new Set();
+function fixFolderTitle(f){
+  if (titleFixed.has(f.id)) return;
+  titleFixed.add(f.id);
+  const want = folderTitleFor(f);
+  if (f.title === oldFolderTitle(f) && want !== f.title) store.updFolder(f.id, {title: want}).catch(() => {});
+}
 function lsGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
 function lsSet(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
 function lsDel(k){ try { localStorage.removeItem(k); } catch(e){} }
@@ -1080,7 +1091,7 @@ async function createFolder(file){
     await uploadPages(fid, tp);
     data.pageImgs = {};
     tp.forEach(p => { if (p.img) data.pageImgs[p.n] = p.img; });
-    data.title = "体系図 " + (data.info.date || fmtDate(data.createdAt));
+    data.title = folderTitleFor(data);
     data.stats = {total:data.slots.length, missing:data.slots.length, ng:0, warn:0};
     await store.setFolder(fid, data);
     taikeiWork = null;
@@ -1621,7 +1632,8 @@ function renderSide(){
   folders.forEach((f, i) => {
     const st = f.stats || {};
     const latest = i === folders.length - 1;
-    const defaultTitle = "体系図 " + ((f.info || {}).date || fmtDate(f.createdAt));
+    fixFolderTitle(f);
+    const defaultTitle = folderTitleFor(f);
     const renameBtn = h("button",{class:"btn small frename", type:"button", "aria-label":`${f.title || f.fileName} の名前を変更`, onclick:()=>openRename({
       heading:"フォルダ名を変更", value:f.title || "", placeholder:defaultTitle,
       hint:`空にして保存すると「${defaultTitle}」に戻ります。`,
@@ -1698,7 +1710,7 @@ function renderMain(){
     return h("button",{type:"button", onclick:()=>openViewer(f.id, n, `施工体系図 p${n}`, img)}, src ? h("img",{src, alt:`体系図 ${n}ページ目`}) : `p${n}`);
   })) : null;
 
-  const defaultTitle = "体系図 " + ((f.info || {}).date || fmtDate(f.createdAt));
+  const defaultTitle = folderTitleFor(f);
   const titleEl = h("div",{class:"titlerow"},
     h("h2",{text:f.title || f.fileName}),
     h("button",{class:"btn small", type:"button", onclick:()=>openRename({
