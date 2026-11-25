@@ -102,6 +102,13 @@ header.top p{margin:4px 0 0;max-width:64ch}
 .vstage{position:relative;flex:1;width:100%;max-width:1200px;min-height:0;overflow:hidden;border-radius:6px;background:#2a2f33;cursor:grab;touch-action:none}
 .vstage.dragging{cursor:grabbing}
 #vstage img{position:absolute;left:0;top:0;max-width:none;max-height:none;transform-origin:0 0;background:#fff;user-select:none;-webkit-user-drag:none;border-radius:0}
+/* ページの差し替え */
+.pgwrap{display:flex;flex-direction:column;gap:4px;min-width:0}
+.pgwrap .pg{width:100%}
+.pgrep{min-height:34px !important;padding:2px 6px !important;font-size:.82rem !important;width:100%}
+.pg.repl{border-color:var(--accent);border-width:2px}
+.replbadge{margin-left:4px;font-size:.7rem;color:var(--surface);background:var(--accent);border-radius:3px;padding:0 4px;font-family:var(--f-body)}
+.replnote{padding:10px 20px;border-bottom:1px solid var(--line);font-size:.95rem;background:color-mix(in srgb,var(--accent) 8%,var(--surface));color:var(--ink)}
 .dlg{background:var(--surface);color:var(--ink);border-radius:12px;padding:24px;width:min(520px,100%);display:flex;flex-direction:column;gap:12px;box-shadow:0 12px 40px rgba(0,0,0,.35)}
 .dlg input{width:100%;min-height:52px;border:2px solid var(--accent);background:var(--surface);border-radius:8px;padding:8px 12px;font-size:1.15rem;font-weight:700}
 .dlg p{margin:0}
@@ -410,6 +417,7 @@ body{background:var(--bg)}
 <input type="file" id="taikeiIn" accept="application/pdf,.pdf" hidden>
 <input type="file" id="vendorIn" accept="application/pdf,.pdf" multiple hidden>
 <input type="file" id="slotIn" accept="application/pdf,.pdf" hidden>
+<input type="file" id="replaceIn" accept="application/pdf,.pdf,image/jpeg,image/png,.jpg,.jpeg,.png" hidden>
 <input type="file" id="restoreIn" accept="application/json,.json" hidden>
 
 <div class="viewer" id="renameBox" hidden role="dialog" aria-modal="true" aria-labelledby="renameTitle">
@@ -433,6 +441,7 @@ body{background:var(--bg)}
       <span class="vzoom" id="zoomPct">100%</span>
       <button class="btn" type="button" id="zoomIn" aria-label="拡大">＋ 拡大</button>
       <button class="btn" type="button" id="zoomReset">元の大きさ</button>
+      <button class="btn" type="button" id="viewerReplace" hidden>このページを差し替える</button>
       <button class="btn" type="button" id="viewerClose">閉じる</button>
     </div>
   </div>
@@ -550,6 +559,7 @@ let queue = Promise.resolve();
 let confirmDel = null;
 let pendingSlot = null;
 let renaming = null, renameDraft = "";
+let pendingReplace = null, viewerTarget = null;
 
 const pdfjs = window.pdfjsLib || window["pdfjs-dist/build/pdf"];
 if (pdfjs) { try { pdfjs.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"; } catch(e){} }
@@ -1002,7 +1012,7 @@ async function processVendor(w, mode){
         obj.pages.forEach(p => { p.type = ""; });
       }
     }
-    if (!hasKey()){ obj.results = manualResults(obj.tier); notes.ai = errText({code:"no_key"}); await saveVendor(w); return; }
+    if (!hasKey()){ if (!obj.results || !Object.keys(obj.results).length) obj.results = manualResults(obj.tier); notes.ai = errText({code:"no_key"}); await saveVendor(w); return; }
     const todo = obj.pages.filter(p => !p.type);
     if (todo.length){
       w.phase = "read"; w.progress = {done: obj.pages.length - todo.length, total: obj.pages.length}; render();
@@ -1035,12 +1045,20 @@ async function processVendor(w, mode){
     const ord = checkOrder(obj.pages);
     const res = await askJson(judgePrompt(obj, slot, folder, rules, ord.status === "ok" ? "問題なし" : ord.note));
     const items = res && Array.isArray(res.items) ? res.items : [];
+    const prevManual = {};
+    for (const [k, r] of Object.entries(obj.results || {})) if (r && r.manual) prevManual[k] = r;
     obj.results = {};
     for (const r of rules){
       if (r.id === "order"){ obj.results.order = ord; continue; }
       const it = items.find(x => x && x.id === r.id);
       const st = it && STATUS[it.status] && it.status !== "todo" ? it.status : "warn";
       obj.results[r.id] = {status:st, note: it ? String(it.note || "").slice(0,120) : "AIの判定が返らなかったため要確認", pages: it && Array.isArray(it.pages) ? it.pages.map(Number).filter(n => n > 0 && n <= obj.pages.length).slice(0,8) : []};
+    }
+    // 手で付けた判定は、差し替え・再判定のあとも残す（AIが×→○に変わった項目は手動のものを優先しない）
+    for (const [k, r] of Object.entries(prevManual)){
+      const now = obj.results[k];
+      if (now && now.status === "ok" && r.status !== "ok") continue;
+      obj.results[k] = r;
     }
     if (slot) obj.results.tm_name = {status:"ok", note:`体系図の「${slot.name}」（${TIERS[slot.tier].short}）`, pages:[]};
     else {
@@ -1073,6 +1091,10 @@ async function saveVendor(w){
     }
     const keep = new Set(obj.pages.map(p => p.img));
     gcAssets(old.filter(id => !keep.has(id)));
+  }
+  if (w.gcAfter && w.gcAfter.length){
+    const keep = new Set(obj.pages.map(p => p.img));
+    gcAssets(w.gcAfter.filter(id => !keep.has(id)));
   }
   delete work[vid];
   if (fid === currentFid) selectedVid = vid;
@@ -1147,7 +1169,9 @@ async function selectFolder(fid, quiet){
   render();
 }
 
-function openViewer(cacheId, n, caption, imgId){
+function openViewer(cacheId, n, caption, imgId, target){
+  viewerTarget = target || null;
+  document.getElementById("viewerReplace").hidden = !viewerTarget;
   const src = pageSrc(cacheId, n, imgId);
   const img = document.getElementById("viewerImg");
   if (src){ img.src = src; img.hidden = false; img.alt = `${n}ページ目`; } else { img.hidden = true; }
@@ -1444,6 +1468,7 @@ function renderCard(v, f){
   if (w && w.error) card.append(h("div",{class:"err", role:"alert", text:w.error}));
   if (slot) card.append(slotInfo(slot));
   if (d.summary && !busy) card.append(h("div",{class:"aisum"}, h("b",{text:"所見　"}), d.summary));
+  if (d.lastReplace && !busy) card.append(h("div",{class:"replnote", text:`p${d.lastReplace.page} を「${d.lastReplace.fileName}」${d.lastReplace.count > 1 ? `（${d.lastReplace.count}ページ）` : ""}に差し替えて判定し直しました（${fmtDate(d.lastReplace.at)}）`}));
 
   const checks = h("div",{class:"checks"});
   let group = "";
@@ -1468,9 +1493,11 @@ function renderCard(v, f){
   const plist = h("div",{class:"plist"});
   for (const p of (d.pages || [])){
     const src = pageSrc(v.id, p.n, p.img);
-    plist.append(h("button",{class:`pg${p.unreadable || p.type === "判読不可" ? " flag" : ""}`, type:"button", onclick:()=>pageView(v, p.n)},
-      src ? h("img",{src, alt:`${p.n}ページ目`, loading:"lazy"}) : h("span",{class:"ph"}),
-      h("span",{class:"pn", text:"p"+p.n}), h("span",{class:"pt", text:p.type || "未読取"})));
+    plist.append(h("div",{class:"pgwrap"},
+      h("button",{class:`pg${p.unreadable || p.type === "判読不可" ? " flag" : ""}${p.replaced ? " repl" : ""}`, type:"button", onclick:()=>pageView(v, p.n)},
+        src ? h("img",{src, alt:`${p.n}ページ目`, loading:"lazy"}) : h("span",{class:"ph"}),
+        h("span",{class:"pn"}, "p"+p.n, p.replaced ? h("b",{class:"replbadge", text:"差替"}) : null), h("span",{class:"pt", text:p.type || "未読取"})),
+      !busy ? h("button",{class:"btn small pgrep", type:"button", "aria-label":`${p.n}ページ目を差し替える`, onclick:()=>askReplace(f.id, v.id, p.n), text:"差し替え"}) : null));
   }
   card.append(h("div",{class:"card-body"}, checks,
     h("aside",{class:"pages"}, h("h3",{text:"ページと書類の種類"}), (d.pages || []).length ? plist : h("p",{class:"muted small", text:"読み込み中…"}))));
@@ -1478,7 +1505,57 @@ function renderCard(v, f){
 }
 function pageView(v, n){
   const p = (v.doc.pages || []).find(x => x.n === n);
-  openViewer(v.id, n, `p${n}［${p ? p.type || "未判定" : ""}］` + (p && p.text ? "\n" + p.text : ""), p && p.img);
+  openViewer(v.id, n, `p${n}［${p ? p.type || "未判定" : ""}］` + (p && p.text ? "\n" + p.text : ""), p && p.img, v.w ? null : {fid:currentFid, vid:v.id, n});
+}
+
+/* ---------- 1ページだけ差し替える ---------- */
+function askReplace(fid, vid, n){
+  pendingReplace = {fid, vid, n};
+  document.getElementById("replaceIn").click();
+}
+async function fileToPages(file){
+  if (/\.pdf$/i.test(file.name) || file.type === "application/pdf"){
+    const {pages} = await pdfToPages(file, 10, null, 1.25);
+    return pages.map(p => ({blob:p.blob, url:p.url}));
+  }
+  if (/^image\/(jpeg|png)$/.test(file.type) || /\.(jpe?g|png)$/i.test(file.name)){
+    const bmp = await createImageBitmap(file);
+    const sc = Math.min(1, Math.sqrt(1.25e6 / (bmp.width * bmp.height)));
+    const c = document.createElement("canvas");
+    c.width = Math.round(bmp.width * sc); c.height = Math.round(bmp.height * sc);
+    const ctx = c.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height);
+    ctx.drawImage(bmp, 0, 0, c.width, c.height);
+    const blob = await new Promise(r => c.toBlob(r, "image/jpeg", 0.86));
+    return [{blob, url:URL.createObjectURL(blob)}];
+  }
+  throw new Error("PDFか画像（JPG・PNG）を選んでください。");
+}
+async function replacePage(t, file){
+  const v = currentVendors().find(x => x.id === t.vid);
+  if (!v || t.fid !== currentFid) return;
+  if (v.w && v.w.phase !== "error"){ notes.db = "読み取り中は差し替えできません。終わってからもう一度押してください。"; render(); return; }
+  let added;
+  try { added = await fileToPages(file); } catch(e){ notes.db = "差し替えできませんでした：" + (e && e.message || e); render(); return; }
+  if (!added.length) return;
+  const obj = clone(v.doc); delete obj.id; delete obj.fid;
+  const old = obj.pages || [];
+  const idx = old.findIndex(p => p.n === t.n);
+  if (idx < 0) return;
+  const oldCache = imgCache[t.vid] || {};
+  const removed = old[idx].img;
+  const merged = [
+    ...old.slice(0, idx).map(p => ({...p, _c:oldCache[p.n]})),
+    ...added.map(a => ({type:"", company:"", text:"", unreadable:false, img:null, replaced:Date.now(), _c:{blob:a.blob, url:a.url}})),
+    ...old.slice(idx + 1).map(p => ({...p, _c:oldCache[p.n]})),
+  ];
+  const cache = {};
+  merged.forEach((p, i) => { p.n = i + 1; if (p._c) cache[p.n] = p._c; delete p._c; });
+  obj.pages = merged;
+  imgCache[t.vid] = cache;
+  obj.lastReplace = {at:Date.now(), page:t.n, count:added.length, fileName:file.name};
+  document.getElementById("viewer").hidden = true;
+  selectedVid = t.vid;
+  enqueue({fid:t.fid, vid:t.vid, file:null, phase:"queued", progress:{done:0,total:0}, error:"", obj, gcAfter: removed ? [removed] : []}, "judge");
 }
 function hasImages(v){
   const pages = v.doc.pages || [];
@@ -1622,6 +1699,8 @@ nf.addEventListener("dragleave", () => nf.classList.remove("over"));
 nf.addEventListener("drop", e => { e.preventDefault(); nf.classList.remove("over"); takeTaikei(e.dataTransfer.files); });
 vendorIn.addEventListener("change", e => { addVendorFiles(e.target.files); e.target.value = ""; });
 slotIn.addEventListener("change", e => { if (pendingSlot) addVendorFiles(e.target.files, pendingSlot); pendingSlot = null; e.target.value = ""; });
+document.getElementById("replaceIn").addEventListener("change", e => { const f = e.target.files[0]; const t = pendingReplace; pendingReplace = null; e.target.value = ""; if (f && t) replacePage(t, f); });
+document.getElementById("viewerReplace").addEventListener("click", () => { if (viewerTarget) askReplace(viewerTarget.fid, viewerTarget.vid, viewerTarget.n); });
 window.addEventListener("popstate", () => { const id = hashFid(); if (id && id !== currentFid && folderById(id)) selectFolder(id, true); });
 window.addEventListener("hashchange", () => { const id = hashFid(); if (id && id !== currentFid && folderById(id)) selectFolder(id, true); });
 
